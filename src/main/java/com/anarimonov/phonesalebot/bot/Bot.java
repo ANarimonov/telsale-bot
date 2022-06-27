@@ -277,7 +277,7 @@ public class Bot extends TelegramLongPollingBot {
                 product = new Product();
             switch (text) {
                 case "CRUD" -> sendTextMessage(userActivity.setStep(1), "Kategoriyalardan birini tanlang");
-                case "Admin qo'shish" -> sendTextMessage(userActivity.setStep(23), msg);
+                case "Admin qo'shish" -> sendTextMessage(userActivity.setStep(25), msg);
                 case "Reklama jo'natish" -> sendTextMessage(userActivity.setStep(29), "Xabarni yuboring");
                 case "Kanal CRUD" -> sendTextMessage(userActivity.setStep(2), msg);
                 case "Mahsulot CRUD" -> sendTextMessage(userActivity.setStep(28), "Bittasini tanlang");
