@@ -377,6 +377,7 @@ public class Bot extends TelegramLongPollingBot {
                     if (byName == null) byName = countryRepo.save(new Country(text));
                     productDto.setCountry(byName.getName());
                     productDtoMap.put(userId,productDto);
+                    sendTextMessage(userActivity.setStep(13), "Ayiriladigan miqdorni kiriting");
                 }
                 case 13 -> {
                     double amount = Double.parseDouble(text);
