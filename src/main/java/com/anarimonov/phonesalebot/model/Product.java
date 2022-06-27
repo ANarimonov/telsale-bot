@@ -23,13 +23,13 @@ public class Product extends AbsEntity {
     private Brand brand;
     private double price;
     private double documentPenalty;
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.MERGE)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             joinColumns = @JoinColumn(name = "product_id"),
             inverseJoinColumns = @JoinColumn(name = "color_id")
     )
     private Set<Color> colors;
-    @ManyToMany(cascade = CascadeType.MERGE)
+    @ManyToMany
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
             joinColumns = @JoinColumn(name = "product_id"),
@@ -38,14 +38,14 @@ public class Product extends AbsEntity {
     private Set<Country> countries;
     private int damage1;
     private int damage2;
-    @ManyToMany(cascade = CascadeType.MERGE)
+    @ManyToMany
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
             joinColumns = @JoinColumn(name = "product_id"),
             inverseJoinColumns = @JoinColumn(name = "penalty_id")
     )
     private Map<Storage, Penalty> storage;
-    @ManyToMany(cascade = CascadeType.MERGE)
+    @ManyToMany
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
             joinColumns = @JoinColumn(name = "product_id"),
