@@ -4,8 +4,6 @@ import com.anarimonov.phonesalebot.model.Penalty;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.Optional;
-
 public interface PenaltyRepository extends JpaRepository<Penalty, Integer> {
     Penalty findByAmount(double penalty);
 

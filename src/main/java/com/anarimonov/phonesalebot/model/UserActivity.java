@@ -1,6 +1,9 @@
 package com.anarimonov.phonesalebot.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -10,7 +13,6 @@ import javax.persistence.OneToOne;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
-//@Setter
 @ToString
 @Entity(name = "usersActivity")
 public class UserActivity {
@@ -35,19 +37,12 @@ public class UserActivity {
         return this;
     }
 
-    public UserActivity setUser(User user) {
-        this.user = user;
-        return this;
-    }
-
-    public UserActivity setLanguageCode(String languageCode) {
+    public void setLanguageCode(String languageCode) {
         this.languageCode = languageCode;
-        return this;
     }
 
-    public UserActivity setRole(String role) {
+    public void setRole(String role) {
         this.role = role;
-        return this;
     }
 
     public UserActivity setStep(int step) {

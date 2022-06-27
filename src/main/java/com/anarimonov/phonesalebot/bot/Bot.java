@@ -492,6 +492,7 @@ public class Bot extends TelegramLongPollingBot {
                             userActivity1.setRole("user");
                         userActivityService.userActivityRepository().save(userActivity1);
                     }
+                    startMessage(userActivity);
                 }
             }
         }

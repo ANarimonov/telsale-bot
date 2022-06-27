@@ -4,7 +4,6 @@ import com.anarimonov.phonesalebot.bot.Bot;
 import com.anarimonov.phonesalebot.repository.*;
 import com.anarimonov.phonesalebot.service.UserActivityService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -24,9 +23,7 @@ public class DataLoader implements CommandLineRunner {
     private final CountryRepository countryRepository;
     private final PenaltyRepository penaltyRepository;
     private final BatteryRepository batteryRepository;
-
-    @Autowired
-    RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     @Override
     public void run(String... args) {

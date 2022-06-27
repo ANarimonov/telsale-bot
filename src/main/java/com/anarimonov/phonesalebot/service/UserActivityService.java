@@ -4,13 +4,9 @@ import com.anarimonov.phonesalebot.model.User;
 import com.anarimonov.phonesalebot.model.UserActivity;
 import com.anarimonov.phonesalebot.repository.UserActivityRepository;
 import com.anarimonov.phonesalebot.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-
-import java.util.List;
-import java.util.Optional;
 
 
 @Service
@@ -31,13 +27,5 @@ public record UserActivityService(UserActivityRepository userActivityRepository,
 
     public void update(UserActivity userActivity) {
         userActivityRepository.save(userActivity);
-    }
-
-    public String getAdminPhoneNumber() {
-        List<UserActivity> admins = userActivityRepository.findByRole("admin");
-        if (!admins.isEmpty()) {
-            return admins.get(0).getUser().getPhoneNumber();
-        }
-        return "";
     }
 }
