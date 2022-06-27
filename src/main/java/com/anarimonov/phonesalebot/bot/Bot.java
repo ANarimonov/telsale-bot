@@ -677,7 +677,7 @@ public class Bot extends TelegramLongPollingBot {
             sendTextMessage(userActivity.setStep(0), "Brendi:" + productDto.getBrand() + "\n" +
                     "Modeli:" + productDto.getModel() + "\n" +
                     "\n" +
-                    (productDto.getModel().equalsIgnoreCase("iphone") ? "Batareyka foizi:" + productDto.getBatteryCapacity() : "") +
+                    (productDto.getBrand().equalsIgnoreCase("iphone") ? "Batareyka foizi:" + productDto.getBatteryCapacity() : "") +
                     "Korobka dokumenti:" + (productDto.isDocuments() ? "Bor" : "Yo'q") + "\n" +
                     "Rangi:" + productDto.getColor() + "\n" +
                     "Xotirasi:" + productDto.getStorage() + "\n" +
@@ -689,7 +689,7 @@ public class Bot extends TelegramLongPollingBot {
             sendTextMessage(userActivity.setStep(0), "Бренд:" + productDto.getBrand() + "\n" +
                     "Модель:" + productDto.getModel() + "\n" +
                     "\n" +
-                    (productDto.getModel().equalsIgnoreCase("iphone") ? "Процент батареи:" + productDto.getBatteryCapacity() : "") +
+                    (productDto.getBrand().equalsIgnoreCase("iphone") ? "Процент батареи:" + productDto.getBatteryCapacity() : "") +
                     "Коробка и документ:" + (productDto.isDocuments() ? "Есть" : "Нет") + "\n" +
                     "Цвет:" + productDto.getColor() + "\n" +
                     "Память:" + productDto.getStorage() + "\n" +
