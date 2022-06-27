@@ -340,7 +340,7 @@ public class Bot extends TelegramLongPollingBot {
                 case 9 -> {
                     if (text.equals("Keyingi ➡️") && product.getStorages() != null) {
                         sendTextMessage(userActivity.setStep(11), "Narxini kiriting");
-                        break;
+                        return;
                     }
                     Storage byName = storageRepo.findByName(text);
                     if (byName == null) {
@@ -371,7 +371,7 @@ public class Bot extends TelegramLongPollingBot {
                 case 12 -> {
                     if (text.equals("Keyingi ➡️") && product.getCountries() != null) {
                         sendTextMessage(userActivity.setStep(14), "Karobka & dokument yo'q bo'lganda olinadigan miqdorni kiriting");
-                        break;
+                        return;
                     }
                     Country byName = countryRepo.findByName(text);
                     if (byName == null) byName = countryRepo.save(new Country(text));
@@ -403,7 +403,7 @@ public class Bot extends TelegramLongPollingBot {
                 case 15 -> {
                     if (text.equals("Keyingi ➡️") && product.getBattery() != null) {
                         sendTextMessage(userActivity.setStep(17), "0-10% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
-                        break;
+                        return;
                     }
                     Battery byName = batteryRepo.findByName(text);
                     if (byName == null) byName = batteryRepo.save(new Battery(text));
@@ -485,6 +485,7 @@ public class Bot extends TelegramLongPollingBot {
                     Product product1 = productRepo.findById(product.getId()).get();
                     product1.setPrice(newPrice);
                     productRepo.save(product1);
+                    productMap.remove(userId);
                     sendTextMessage(userActivity.setStep(0), "O'zgartirildi");
                 }
                 case 26 -> {
