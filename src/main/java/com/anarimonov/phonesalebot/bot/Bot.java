@@ -211,14 +211,14 @@ public class Bot extends TelegramLongPollingBot {
                         productDto.setPrice(productDto.getPrice() - productDto.getDocumentPenalty());
                     } else break;
                     productDtoMap.put(userId, productDto);
-                    sendTextMessage(userActivity.setStep(7), langCode.equals("uz") ? "Telefoningiz rangini belgilang!" : "Выберите цвет вашего телефона!");
+                    sendTextMessage(userActivity.setStep(8), langCode.equals("uz") ? "Telefoningiz rangini belgilang!" : "Выберите цвет вашего телефона!");
                 }
                 case 8 -> {
                     Color color = colorRepo.findByName(text);
                     if (color != null) {
                         productDto.setColor(text);
                         productDtoMap.put(userId, productDto);
-                        sendTextMessage(userActivity.setStep(8), langCode.equals("uz") ? "Telefoningiz xotirasini belgilang!" :
+                        sendTextMessage(userActivity.setStep(9), langCode.equals("uz") ? "Telefoningiz xotirasini belgilang!" :
                                 "Укажите память вашего телефона!");
                     }
                 }
@@ -229,7 +229,7 @@ public class Bot extends TelegramLongPollingBot {
                         productDto.setStorage(text);
                         productDto.setPrice(productDto.getPrice() - penalty.getAmount());
                         productDtoMap.put(userId, productDto);
-                        sendTextMessage(userActivity.setStep(9), langCode.equals("uz") ? "Telefoningiz ishlab chiqarilgan joyni kiriting!" :
+                        sendTextMessage(userActivity.setStep(10), langCode.equals("uz") ? "Telefoningiz ishlab chiqarilgan joyni kiriting!" :
                                 "Введите место, где был изготовлен ваш телефон!");
                     }
                 }
@@ -238,12 +238,12 @@ public class Bot extends TelegramLongPollingBot {
                     if (country != null) {
                         productDto.setCountry(text);
                         productDtoMap.put(userId, productDto);
-                        sendTextMessage(userActivity.setStep(10), langCode.equals("uz") ? "Telefoningizga shikast yetganmi?" : "Ваш телефон поврежден?");
+                        sendTextMessage(userActivity.setStep(11), langCode.equals("uz") ? "Telefoningizga shikast yetganmi?" : "Ваш телефон поврежден?");
                     }
                 }
                 case 11 -> {
                     if (text.equals("Ha") || text.equals("Да")) {
-                        sendTextMessage(userActivity.setStep(11), langCode.equals("uz") ? """
+                        sendTextMessage(userActivity.setStep(12), langCode.equals("uz") ? """
                                 Telefoningizni necha foizi shikastlangan?
 
                                 0-10% - telefon qirilgan, chaqasi bor, batareyka almashgan.
