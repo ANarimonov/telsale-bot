@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 
 @NoArgsConstructor
@@ -13,6 +14,7 @@ import javax.persistence.Entity;
 @Entity(name = "brands")
 public class Brand extends AbsEntity {
 
+    @Column(columnDefinition = "text")
     private String message;
 
     public Brand(String name) {
