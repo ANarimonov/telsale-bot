@@ -606,13 +606,13 @@ public class Bot extends TelegramLongPollingBot {
                         getObjectsKeyboard(all, rows);
                     }
                 }
+                if (step == 8 || step == 9 || step == 12 || step == 14) {
+                    KeyboardRow row = new KeyboardRow();
+                    row.add("Keyingi ➡️");
+                    rows.add(row);
+                }
             }
             if (step == 2 || step == 6 || step == 9) replyKeyboardMarkup.setOneTimeKeyboard(true);
-            if (step == 8 || step == 9 || step == 12 || step == 14) {
-                KeyboardRow row = new KeyboardRow();
-                row.add("Keyingi ➡️");
-                rows.add(row);
-            }
             if (step > 0 && step != 3) {
                 KeyboardRow row = new KeyboardRow();
                 row.add(langCode.equals("uz") ? "\uD83D\uDD1D Asosiy Menyu" : "\uD83D\uDD1D Главное Меню");
