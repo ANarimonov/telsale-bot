@@ -437,6 +437,7 @@ public class Bot extends TelegramLongPollingBot {
                     Brand brand = product.getBrand();
                     brand.setMessage(text);
                     brandRepo.save(brand);
+                    startMessage(userActivity);
                 }
                 case 21 -> {
                     Brand byName = brandRepo.findByName(text);
