@@ -432,6 +432,7 @@ public class Bot extends TelegramLongPollingBot {
                     int damage2 = Integer.parseInt(text);
                     product.setDamage2(damage2);
                     productRepo.save(product);
+                    productMap.put(userActivity.getUser().getId(), new Product());
                     sendTextMessage(userActivity.setStep(0), "Qo'shildi");
                 }
                 case 20 -> {
@@ -485,7 +486,6 @@ public class Bot extends TelegramLongPollingBot {
                     Product product1 = productRepo.findById(product.getId()).get();
                     product1.setPrice(newPrice);
                     productRepo.save(product1);
-                    productMap.remove(userId);
                     sendTextMessage(userActivity.setStep(0), "O'zgartirildi");
                 }
                 case 26 -> {
@@ -651,6 +651,8 @@ public class Bot extends TelegramLongPollingBot {
             text = menuMessageUz;
         else
             text = menuMessageRu;
+        productMap.put(userActivity.getUser().getId(), new Product());
+        productDtoMap.put(userActivity.getUser().getId(), new ProductDto());
         sendTextMessage(userActivity.setStep(0), text);
     }
 
