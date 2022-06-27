@@ -33,9 +33,9 @@ public class Product extends AbsEntity {
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(
             joinColumns = @JoinColumn(name = "product_id"),
-            inverseJoinColumns = @JoinColumn(name = "country_id")
+            inverseJoinColumns = @JoinColumn(name = "penalty_id")
     )
-    private Set<Country> countries;
+    private Map<Country, Penalty> countries;
     private int damage1;
     private int damage2;
     @ManyToMany
@@ -44,7 +44,7 @@ public class Product extends AbsEntity {
             joinColumns = @JoinColumn(name = "product_id"),
             inverseJoinColumns = @JoinColumn(name = "penalty_id")
     )
-    private Map<Storage, Penalty> storage;
+    private Map<Storage, Penalty> storages;
     @ManyToMany
     @LazyCollection(LazyCollectionOption.FALSE)
     @JoinTable(

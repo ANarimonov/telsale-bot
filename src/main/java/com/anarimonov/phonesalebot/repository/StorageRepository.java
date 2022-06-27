@@ -10,6 +10,6 @@ public interface StorageRepository extends JpaRepository<Storage, Integer> {
     Storage findByName(String name);
 
     @Query(nativeQuery = true, value = "select s.* from storages s " +
-            "join products_storage ps on s.id = ps.storage_key where product_id = :productId")
+            "join products_storages ps on s.id = ps.storages_key where product_id = :productId")
     List<Storage> findByProductId(Integer productId);
 }

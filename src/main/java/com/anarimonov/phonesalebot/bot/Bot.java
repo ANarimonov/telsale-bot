@@ -146,10 +146,10 @@ public class Bot extends TelegramLongPollingBot {
         Long userId = userActivity.getUser().getId();
         String langCode = userActivity.getLanguageCode();
         int step = userActivity.getStep();
+        ProductDto productDto = productDtoMap.get(userId);
+        if (productDto == null)
+            productDto = new ProductDto();
         if (userActivity.getRole().equals("user")) {
-            ProductDto productDto = productDtoMap.get(userId);
-            if (productDto == null)
-                productDto = new ProductDto();
             switch (step) {
                 case 1 -> {
                     Brand byName = brandRepo.findByName(text);
@@ -236,6 +236,8 @@ public class Bot extends TelegramLongPollingBot {
                 case 10 -> {
                     Country country = countryRepo.findByName(text);
                     if (country != null) {
+                        Penalty penalty = penaltyRepo.findByCountryId(country.getId());
+                        productDto.setPrice(productDto.getPrice() - penalty.getAmount());
                         productDto.setCountry(text);
                         productDtoMap.put(userId, productDto);
                         sendTextMessage(userActivity.setStep(11), langCode.equals("uz") ? "Telefoningizga shikast yetganmi?" : "Ваш телефон поврежден?");
@@ -277,11 +279,11 @@ public class Bot extends TelegramLongPollingBot {
                 product = new Product();
             switch (text) {
                 case "CRUD" -> sendTextMessage(userActivity.setStep(1), "Kategoriyalardan birini tanlang");
-                case "Admin qo'shish" -> sendTextMessage(userActivity.setStep(25), msg);
-                case "Reklama jo'natish" -> sendTextMessage(userActivity.setStep(29), "Xabarni yuboring");
+                case "Admin menu" -> sendTextMessage(userActivity.setStep(26), msg);
+                case "Reklama jo'natish" -> sendTextMessage(userActivity.setStep(30), "Xabarni yuboring");
                 case "Kanal CRUD" -> sendTextMessage(userActivity.setStep(2), msg);
-                case "Mahsulot CRUD" -> sendTextMessage(userActivity.setStep(28), "Bittasini tanlang");
-                case "Sotish uchun" -> sendTextMessage(userActivity.setStep(18), "Brandni tanlang");
+                case "Mahsulot CRUD" -> sendTextMessage(userActivity.setStep(29), "Bittasini tanlang");
+                case "Sotish uchun" -> sendTextMessage(userActivity.setStep(19), "Brandni tanlang");
                 case "Olish uchun" -> sendTextMessage(userActivity.setStep(5), msg);
             }
             switch (step) {
@@ -305,17 +307,17 @@ public class Bot extends TelegramLongPollingBot {
                 case 5 -> {
                     switch (text) {
                         case "Qo'shish" -> sendTextMessage(userActivity.setStep(step + 1), "Brandni tanlang");
-                        case "O'chirish" -> sendTextMessage(userActivity.setStep(20), "Brandni tanlang");
-                        case "Narxini o'zgartirish" -> sendTextMessage(userActivity.setStep(22), "Brandni tanlang");
+                        case "O'chirish" -> sendTextMessage(userActivity.setStep(21), "Brandni tanlang");
+                        case "Narxini o'zgartirish" -> sendTextMessage(userActivity.setStep(23), "Brandni tanlang");
                     }
                 }
-                case 6, 18 -> {
+                case 6, 19 -> {
                     Brand byName = brandRepo.findByName(text);
                     if (byName == null) byName = brandRepo.save(new Brand(text));
                     product.setBrand(byName);
                     productMap.put(userId, product);
                     if (step == 6) sendTextMessage(userActivity.setStep(7), "Modelni kiriting");
-                    else sendTextMessage(userActivity.setStep(19), "Xabarni kiriting");
+                    else sendTextMessage(userActivity.setStep(20), "Xabarni kiriting");
                 }
                 case 7 -> {
                     product.setName(text);
@@ -336,7 +338,7 @@ public class Bot extends TelegramLongPollingBot {
                     productMap.put(userId, product);
                 }
                 case 9 -> {
-                    if (text.equals("Keyingi ➡️") && product.getStorage() != null) {
+                    if (text.equals("Keyingi ➡️") && product.getStorages() != null) {
                         sendTextMessage(userActivity.setStep(11), "Narxini kiriting");
                         break;
                     }
@@ -344,20 +346,19 @@ public class Bot extends TelegramLongPollingBot {
                     if (byName == null) {
                         byName = storageRepo.save(new Storage(text));
                     }
-                    ProductDto productDto = new ProductDto();
                     productDto.setStorage(byName.getName());
                     productDtoMap.put(userId, productDto);
                     sendTextMessage(userActivity.setStep(10), "Ayiriladigan miqdorni kiriting");
                 }
                 case 10 -> {
                     double amount = Double.parseDouble(text);
-                    Map<Storage, Penalty> map = product.getStorage();
+                    Map<Storage, Penalty> map = product.getStorages();
                     if (map == null) map = new HashMap<>();
                     Storage storage = storageRepo.findByName(productDtoMap.get(userId).getStorage());
                     Penalty penalty = penaltyRepo.findByAmount(amount);
                     if (penalty == null) penalty = penaltyRepo.save(new Penalty(amount));
                     map.put(storage, penalty);
-                    product.setStorage(map);
+                    product.setStorages(map);
                     productMap.put(userId, product);
                     sendTextMessage(userActivity.setStep(9), "Xotira sig'imlarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
                 }
@@ -369,38 +370,47 @@ public class Bot extends TelegramLongPollingBot {
                 }
                 case 12 -> {
                     if (text.equals("Keyingi ➡️") && product.getCountries() != null) {
-                        sendTextMessage(userActivity.setStep(13), "Karobka & dokument yo'q bo'lganda olinadigan miqdorni kiriting");
+                        sendTextMessage(userActivity.setStep(14), "Karobka & dokument yo'q bo'lganda olinadigan miqdorni kiriting");
                         break;
                     }
                     Country byName = countryRepo.findByName(text);
-                    Set<Country> countries = product.getCountries();
-                    if (countries == null) countries = new HashSet<>();
-                    countries.add(byName == null ? countryRepo.save(new Country(text)) : byName);
-                    product.setCountries(countries);
-                    productMap.put(userId, product);
+                    if (byName == null) byName = countryRepo.save(new Country(text));
+                    productDto.setCountry(byName.getName());
+                    productDtoMap.put(userId,productDto);
                 }
                 case 13 -> {
+                    double amount = Double.parseDouble(text);
+                    Map<Country, Penalty> countries = product.getCountries();
+                    if (countries == null) countries = new HashMap<>();
+                    Country byName = countryRepo.findByName(productDto.getCountry());
+                    Penalty byAmount = penaltyRepo.findByAmount(amount);
+                    if (byAmount == null) byAmount = penaltyRepo.save(new Penalty(amount));
+                    countries.put(byName,byAmount);
+                    product.setCountries(countries);
+                    productMap.put(userId, product);
+                    sendTextMessage(userActivity.setStep(12), "Ishlab chiqariladigan joylarni kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
+                }
+                case 14 -> {
                     double documentPenalty = Double.parseDouble(text);
                     product.setDocumentPenalty(documentPenalty);
                     productMap.put(userId, product);
                     if (product.getBrand().getName().equalsIgnoreCase("iphone"))
-                        sendTextMessage(userActivity.setStep(14), "Batareyka sig'imlarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
+                        sendTextMessage(userActivity.setStep(15), "Batareyka sig'imlarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
                     else
-                        sendTextMessage(userActivity.setStep(16), "0-10% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
+                        sendTextMessage(userActivity.setStep(17), "0-10% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
                 }
-                case 14 -> {
+                case 15 -> {
                     if (text.equals("Keyingi ➡️") && product.getBattery() != null) {
-                        sendTextMessage(userActivity.setStep(16), "0-10% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
+                        sendTextMessage(userActivity.setStep(17), "0-10% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
                         break;
                     }
                     Battery byName = batteryRepo.findByName(text);
                     if (byName == null) byName = batteryRepo.save(new Battery(text));
-                    ProductDto productDto = new ProductDto();
                     productDto.setBatteryCapacity(byName.getName());
                     productDtoMap.put(userId, productDto);
-                    sendTextMessage(userActivity.setStep(15), "Ayiriladigan miqdorni kiriting");
+                    sendTextMessage(userActivity.setStep(16), "Ayiriladigan miqdorni kiriting");
                 }
-                case 15 -> {
+                case 16 -> {
                     double amount = Double.parseDouble(text);
                     Map<Battery, Penalty> map = product.getBattery();
                     if (map == null) map = new HashMap<>();
@@ -409,35 +419,35 @@ public class Bot extends TelegramLongPollingBot {
                     if (penalty == null) penalty = penaltyRepo.save(new Penalty(amount));
                     map.put(battery, penalty);
                     product.setBattery(map);
-                    sendTextMessage(userActivity.setStep(14), "Batareyka sig'imlarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
+                    sendTextMessage(userActivity.setStep(15), "Batareyka sig'imlarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
                 }
-                case 16 -> {
+                case 17 -> {
                     int damage1 = Integer.parseInt(text);
                     product.setDamage1(damage1);
                     productMap.put(userId, product);
-                    sendTextMessage(userActivity.setStep(17), "30-50% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
+                    sendTextMessage(userActivity.setStep(18), "30-50% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
                 }
-                case 17 -> {
+                case 18 -> {
                     int damage2 = Integer.parseInt(text);
                     product.setDamage2(damage2);
                     productRepo.save(product);
                     sendTextMessage(userActivity.setStep(0), "Qo'shildi");
                 }
-                case 19 -> {
+                case 20 -> {
                     Brand brand = product.getBrand();
                     brand.setMessage(text);
                     brandRepo.save(brand);
                 }
-                case 20 -> {
+                case 21 -> {
                     Brand byName = brandRepo.findByName(text);
                     if (byName != null) {
                         product.setBrand(byName);
                         productMap.put(userId, product);
                         StringBuilder productList = getProductList(byName);
-                        sendTextMessage(userActivity.setStep(21), productList.toString());
+                        sendTextMessage(userActivity.setStep(22), productList.toString());
                     }
                 }
-                case 21 -> {
+                case 22 -> {
                     boolean flag = false;
                     try {
                         Product product1 = productRepo.findByIdAndBrandId(Integer.parseInt(text), product.getBrand().getId());
@@ -453,40 +463,40 @@ public class Bot extends TelegramLongPollingBot {
                         sendTextMessage(userActivity.setStep(0), "O'chirildi");
                     }
                 }
-                case 22 -> {
+                case 23 -> {
                     Brand byName = brandRepo.findByName(text);
                     if (byName != null) {
                         product.setBrand(byName);
                         productMap.put(userId, product);
-                        sendTextMessage(userActivity.setStep(23), getProductList(byName).toString());
-                    }
-                }
-                case 23 -> {
-                    Product product1 = productRepo.findByIdAndBrandId(Integer.parseInt(text), product.getBrand().getId());
-                    if (product1 != null) {
-                        product.setId(product1.getId());
-                        sendTextMessage(userActivity.setStep(24), "Yangi narxni kiriting");
+                        sendTextMessage(userActivity.setStep(24), getProductList(byName).toString());
                     }
                 }
                 case 24 -> {
+                    Product product1 = productRepo.findByIdAndBrandId(Integer.parseInt(text), product.getBrand().getId());
+                    if (product1 != null) {
+                        product.setId(product1.getId());
+                        sendTextMessage(userActivity.setStep(25), "Yangi narxni kiriting");
+                    }
+                }
+                case 25 -> {
                     double newPrice = Double.parseDouble(text);
                     Product product1 = productRepo.findById(product.getId()).get();
                     product1.setPrice(newPrice);
                     productRepo.save(product1);
                     sendTextMessage(userActivity.setStep(0), "O'zgartirildi");
                 }
-                case 25 -> {
+                case 26 -> {
                     if (text.equals("Qo'shish")) {
-                        sendTextMessage(userActivity.setStep(26), "Foydalanuvchi IDsini kiriting");
-                    } else if (text.equals("O'chirish")) {
                         sendTextMessage(userActivity.setStep(27), "Foydalanuvchi IDsini kiriting");
+                    } else if (text.equals("O'chirish")) {
+                        sendTextMessage(userActivity.setStep(28), "Foydalanuvchi IDsini kiriting");
                     }
                 }
-                case 26, 27 -> {
+                case 27, 28 -> {
                     Long id = Long.parseLong(text);
                     if (!id.equals(userId)) {
                         UserActivity userActivity1 = userActivityService.userActivityRepository().findByUserId(id);
-                        if (step == 26)
+                        if (step == 27)
                             userActivity1.setRole("admin");
                         else
                             userActivity1.setRole("user");
@@ -554,7 +564,7 @@ public class Bot extends TelegramLongPollingBot {
                         row.add("CRUD");
                         rows.add(row);
                         row = new KeyboardRow();
-                        row.add("Admin qo'shish");
+                        row.add("Admin menu");
                         rows.add(row);
                         row = new KeyboardRow();
                         row.add("Reklama jo'natish");
@@ -566,12 +576,12 @@ public class Bot extends TelegramLongPollingBot {
                         row1.add("Mahsulot CRUD");
                         rows.add(row1);
                     }
-                    case 2, 25 -> getCrudKeyboard(rows);
-                    case 6, 18, 20, 22 -> {
+                    case 2, 26 -> getCrudKeyboard(rows);
+                    case 6, 19, 21, 23 -> {
                         List<Brand> all = brandRepo.findAll();
                         getObjectsKeyboard(all, rows);
                     }
-                    case 28 -> {
+                    case 29 -> {
                         KeyboardRow row = new KeyboardRow();
                         row.add("Sotish uchun");
                         row.add("Olish uchun");
@@ -602,12 +612,12 @@ public class Bot extends TelegramLongPollingBot {
                         List<Country> all = countryRepo.findAll();
                         getObjectsKeyboard(all, rows);
                     }
-                    case 14 -> {
+                    case 15 -> {
                         List<Battery> all = batteryRepo.findAll();
                         getObjectsKeyboard(all, rows);
                     }
                 }
-                if (step == 8 || step == 9 || step == 12 || step == 14) {
+                if (step == 8 || step == 9 || step == 12 || step == 15) {
                     KeyboardRow row = new KeyboardRow();
                     row.add("Keyingi ➡️");
                     rows.add(row);
