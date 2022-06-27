@@ -4,8 +4,10 @@ import com.anarimonov.phonesalebot.bot.Bot;
 import com.anarimonov.phonesalebot.repository.*;
 import com.anarimonov.phonesalebot.service.UserActivityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
@@ -23,13 +25,29 @@ public class DataLoader implements CommandLineRunner {
     private final PenaltyRepository penaltyRepository;
     private final BatteryRepository batteryRepository;
 
+    @Autowired
+    RestTemplate restTemplate;
+
     @Override
     public void run(String... args) {
+
         try {
             new TelegramBotsApi(DefaultBotSession.class).registerBot(new Bot(userActivityService,
                     channelRepository,brandRepository,productRepository,colorRepository,storageRepository,countryRepository,penaltyRepository,batteryRepository));
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
+        }
+        while (true){
+            String forObject = restTemplate.getForObject(
+                    "https://telsale-bot.herokuapp.com/api/test/hello",
+                    String.class
+            );
+            System.out.println(forObject);
+            try {
+                Thread.sleep(50000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
