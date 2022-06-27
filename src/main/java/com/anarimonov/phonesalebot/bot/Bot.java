@@ -721,7 +721,7 @@ public class Bot extends TelegramLongPollingBot {
         for (AbsEntity item : list) {
             count++;
             row.add(item.getName());
-            if (count == 2) {
+            if (count % 2 == 0) {
                 rows.add(row);
                 row = new KeyboardRow();
             }
