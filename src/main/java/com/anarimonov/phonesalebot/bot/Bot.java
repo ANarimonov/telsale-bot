@@ -433,7 +433,7 @@ public class Bot extends TelegramLongPollingBot {
                     product.setDamage2(damage2);
                     productRepo.save(product);
                     productMap.put(userActivity.getUser().getId(), new Product());
-                    sendTextMessage(userActivity.setStep(0), "Qo'shildi");
+                    sendTextMessage(userActivity.setStep(29), "Qo'shildi");
                 }
                 case 20 -> {
                     Brand brand = product.getBrand();
