@@ -257,16 +257,13 @@ public class Bot extends TelegramLongPollingBot {
                                         0-10% - телефон сломан, есть бут, батарея заменена.
                                             
                                         30-50% - заменен экран, не работает Touch ID пальцев, не работает Face ID, большое количество повреждений, есть пятна.""");
-                    } else if (text.equals("Yo'q") || text.equals("Нет")) {
+                    } else if (text.equals("Yo'q") || text.equals("Нет"))
                         finallyMessage(userActivity);
-                    }
                 }
                 case 12 -> {
-                    if (text.equals("0~10%")) {
-                        productDto.setPrice(productDto.getPrice() - productDto.getDamage1());
-                    } else if (text.equals("30~50%")) {
-                        productDto.setPrice(productDto.getPrice() - productDto.getDamage2());
-                    } else break;
+                    if (text.equals("0~10%")) productDto.setPrice(productDto.getPrice() - productDto.getDamage1());
+                     else if (text.equals("30~50%")) productDto.setPrice(productDto.getPrice() - productDto.getDamage2());
+                     else break;
                     productDto.setDamage(text);
                     productDtoMap.put(userId, productDto);
                     finallyMessage(userActivity);
@@ -329,26 +326,30 @@ public class Bot extends TelegramLongPollingBot {
                         sendTextMessage(userActivity.setStep(9), "Xotira sig'imlarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
                         break;
                     }
-                    Color byName = colorRepo.findByName(text);
-                    Set<Color> colors = product.getColors();
-                    if (colors == null) colors = new HashSet<>();
-                    if (byName == null) byName = colorRepo.save(new Color(text));
-                    colors.add(byName);
-                    product.setColors(colors);
-                    productMap.put(userId, product);
+                    if (!text.equals("Keyingi ➡️")) {
+                        Color byName = colorRepo.findByName(text);
+                        Set<Color> colors = product.getColors();
+                        if (colors == null) colors = new HashSet<>();
+                        if (byName == null) byName = colorRepo.save(new Color(text));
+                        colors.add(byName);
+                        product.setColors(colors);
+                        productMap.put(userId, product);
+                    }
                 }
                 case 9 -> {
                     if (text.equals("Keyingi ➡️") && product.getStorages() != null) {
                         sendTextMessage(userActivity.setStep(11), "Narxini kiriting");
                         return;
                     }
-                    Storage byName = storageRepo.findByName(text);
-                    if (byName == null) {
-                        byName = storageRepo.save(new Storage(text));
+                    if (!text.equals("Keyingi ➡️")) {
+                        Storage byName = storageRepo.findByName(text);
+                        if (byName == null) {
+                            byName = storageRepo.save(new Storage(text));
+                        }
+                        productDto.setStorage(byName.getName());
+                        productDtoMap.put(userId, productDto);
+                        sendTextMessage(userActivity.setStep(10), "Ayiriladigan miqdorni kiriting");
                     }
-                    productDto.setStorage(byName.getName());
-                    productDtoMap.put(userId, productDto);
-                    sendTextMessage(userActivity.setStep(10), "Ayiriladigan miqdorni kiriting");
                 }
                 case 10 -> {
                     double amount = Double.parseDouble(text);
@@ -373,11 +374,13 @@ public class Bot extends TelegramLongPollingBot {
                         sendTextMessage(userActivity.setStep(14), "Karobka & dokument yo'q bo'lganda olinadigan miqdorni kiriting");
                         return;
                     }
-                    Country byName = countryRepo.findByName(text);
-                    if (byName == null) byName = countryRepo.save(new Country(text));
-                    productDto.setCountry(byName.getName());
-                    productDtoMap.put(userId,productDto);
-                    sendTextMessage(userActivity.setStep(13), "Ayiriladigan miqdorni kiriting");
+                    if (!text.equals("Keyingi ➡️")) {
+                        Country byName = countryRepo.findByName(text);
+                        if (byName == null) byName = countryRepo.save(new Country(text));
+                        productDto.setCountry(byName.getName());
+                        productDtoMap.put(userId, productDto);
+                        sendTextMessage(userActivity.setStep(13), "Ayiriladigan miqdorni kiriting");
+                    }
                 }
                 case 13 -> {
                     double amount = Double.parseDouble(text);
@@ -405,11 +408,13 @@ public class Bot extends TelegramLongPollingBot {
                         sendTextMessage(userActivity.setStep(17), "0-10% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
                         return;
                     }
-                    Battery byName = batteryRepo.findByName(text);
-                    if (byName == null) byName = batteryRepo.save(new Battery(text));
-                    productDto.setBatteryCapacity(byName.getName());
-                    productDtoMap.put(userId, productDto);
-                    sendTextMessage(userActivity.setStep(16), "Ayiriladigan miqdorni kiriting");
+                    if (!text.equals("Keyingi ➡️")) {
+                        Battery byName = batteryRepo.findByName(text);
+                        if (byName == null) byName = batteryRepo.save(new Battery(text));
+                        productDto.setBatteryCapacity(byName.getName());
+                        productDtoMap.put(userId, productDto);
+                        sendTextMessage(userActivity.setStep(16), "Ayiriladigan miqdorni kiriting");
+                    }
                 }
                 case 16 -> {
                     double amount = Double.parseDouble(text);
