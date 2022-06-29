@@ -38,6 +38,9 @@ public class Bot extends TelegramLongPollingBot {
     private final Map<Long, Product> productMap = new HashMap<>();
     private final PenaltyRepository penaltyRepo;
     private final BatteryRepository batteryRepo;
+    private String telegramUrl;
+    private String instagramUrl;
+    private String adminUsername;
 
     @Override
     public String getBotUsername() {
@@ -52,12 +55,13 @@ public class Bot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         UserActivity userActivity = checkUserActivity(update);
-        if (update.hasMessage()) {
-            if (checkJoinedChannels(userActivity))
-                getMessage(update, userActivity);
-        } else if (update.hasCallbackQuery()) {
-            getCallBackQuery(update, userActivity);
-        }
+        if (userActivity.getLanguageCode() != null)
+            if (update.hasMessage()) {
+                if (checkJoinedChannels(userActivity))
+                    getMessage(update, userActivity);
+            } else if (update.hasCallbackQuery()) {
+                getCallBackQuery(update, userActivity);
+            }
     }
 
     private boolean checkJoinedChannels(UserActivity userActivity) {
@@ -127,7 +131,7 @@ public class Bot extends TelegramLongPollingBot {
 
     private void connectToAdmin(UserActivity userActivity) {
         sendTextMessage(userActivity.setStep(0), userActivity.getLanguageCode().equals("uz") ? "Adminga bog'lanish uchun ushbu \"username\" ustiga bosing ➡️ @" +
-                getAdmin().getUsername() : "Нажмите на это «имя пользователя», чтобы связаться с администратором ➡️@" + getAdmin().getUsername());
+                adminUsername : "Нажмите на это «имя пользователя», чтобы связаться с администратором ➡️@" + adminUsername);
     }
 
     private StringBuilder getProductList(Brand byName) {
@@ -195,7 +199,7 @@ public class Bot extends TelegramLongPollingBot {
                 case 6 -> {
                     Battery byName = batteryRepo.findByName(text);
                     if (byName != null) {
-                        Penalty penalty = penaltyRepo.findByBatteryIdAndProductId(byName.getId(),productDto.getId());
+                        Penalty penalty = penaltyRepo.findByBatteryIdAndProductId(byName.getId(), productDto.getId());
                         productDto.setBatteryCapacity(byName.getName());
                         productDto.setPrice(productDto.getPrice() - penalty.getAmount());
                         productDtoMap.put(userId, productDto);
@@ -225,7 +229,7 @@ public class Bot extends TelegramLongPollingBot {
                 case 9 -> {
                     Storage storage = storageRepo.findByName(text);
                     if (storage != null) {
-                        Penalty penalty = penaltyRepo.findByStorageIdAndProductId(storage.getId(),productDto.getId());
+                        Penalty penalty = penaltyRepo.findByStorageIdAndProductId(storage.getId(), productDto.getId());
                         productDto.setStorage(text);
                         productDto.setPrice(productDto.getPrice() - penalty.getAmount());
                         productDtoMap.put(userId, productDto);
@@ -236,7 +240,7 @@ public class Bot extends TelegramLongPollingBot {
                 case 10 -> {
                     Country country = countryRepo.findByName(text);
                     if (country != null) {
-                        Penalty penalty = penaltyRepo.findByCountryIdAndProductId(country.getId(),productDto.getId());
+                        Penalty penalty = penaltyRepo.findByCountryIdAndProductId(country.getId(), productDto.getId());
                         productDto.setPrice(productDto.getPrice() - penalty.getAmount());
                         productDto.setCountry(text);
                         productDtoMap.put(userId, productDto);
@@ -262,11 +266,21 @@ public class Bot extends TelegramLongPollingBot {
                 }
                 case 12 -> {
                     if (text.equals("0~10%")) productDto.setPrice(productDto.getPrice() - productDto.getDamage1());
-                     else if (text.equals("30~50%")) productDto.setPrice(productDto.getPrice() - productDto.getDamage2());
-                     else break;
+                    else if (text.equals("30~50%"))
+                        productDto.setPrice(productDto.getPrice() - productDto.getDamage2());
+                    else break;
                     productDto.setDamage(text);
                     productDtoMap.put(userId, productDto);
-                    finallyMessage(userActivity);
+                    sendTextMessage(userActivity.setStep(14), userActivity.getLanguageCode().equals("uz") ? "Telefoningizni sotasizmi?\n" +
+                            "Bozor narxidan qimmatroq sotishni istasangiz, rasmiy kanalimiz sizga yordam beradi:" :
+                            "Продаётся ли ваш телефон?\n" + "Если вы хотите продать дороже по рыночной цене," +
+                                    " наш официальный канал поможет вам в этом:");
+                }
+                case 14 -> {
+                    if (text.equals("Ha")) {
+                        sendTextMessage(userActivity.setStep(0), langCode.equals("uz") ? "Agar qurilmangizni sotmoqchi bo`lsangiz @" + adminUsername + " ga murojaat qiling." : "Если вы хотите продать свой девайс, свяжитесь с @" + adminUsername);
+                    }
+                    else startMessage(userActivity);
                 }
             }
         } else if (userActivity.getRole().equals("admin")) {
@@ -277,6 +291,7 @@ public class Bot extends TelegramLongPollingBot {
             switch (text) {
                 case "CRUD" -> sendTextMessage(userActivity.setStep(1), "Kategoriyalardan birini tanlang");
                 case "Admin menu" -> sendTextMessage(userActivity.setStep(26), msg);
+                case "Ijtimoiy tarmoqlar" -> sendTextMessage(userActivity.setStep(31), "Birini tanlang");
                 case "Reklama jo'natish" -> sendTextMessage(userActivity.setStep(30), "Xabarni yuboring");
                 case "Kanal CRUD" -> sendTextMessage(userActivity.setStep(2), msg);
                 case "Mahsulot CRUD" -> sendTextMessage(userActivity.setStep(29), "Bittasini tanlang");
@@ -389,7 +404,7 @@ public class Bot extends TelegramLongPollingBot {
                     Country byName = countryRepo.findByName(productDto.getCountry());
                     Penalty byAmount = penaltyRepo.findByAmount(amount);
                     if (byAmount == null) byAmount = penaltyRepo.save(new Penalty(amount));
-                    countries.put(byName,byAmount);
+                    countries.put(byName, byAmount);
                     product.setCountries(countries);
                     productMap.put(userId, product);
                     sendTextMessage(userActivity.setStep(12), "Ishlab chiqariladigan joylarni kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
@@ -512,6 +527,23 @@ public class Bot extends TelegramLongPollingBot {
                     }
                     startMessage(userActivity);
                 }
+                case 31 -> {
+                    switch (text) {
+                        case "Telegram" ->
+                                sendTextMessage(userActivity.setStep(32), "Linkni kiriting. Masalan: https://telegram.org");
+                        case "Instagram" ->
+                                sendTextMessage(userActivity.setStep(33), "Linkni kiriting. Masalan: https://instagram.com");
+                        case "Admin username" ->
+                                sendTextMessage(userActivity.setStep(34), "Username ni @ belgisisiz kiriting");
+                    }
+                }
+                case 32, 33, 34 -> {
+                    if (step == 32)
+                        telegramUrl = text;
+                    else if (step == 33) instagramUrl = text;
+                    else adminUsername = text;
+                    startMessage(userActivity);
+                }
             }
         }
     }
@@ -564,6 +596,19 @@ public class Bot extends TelegramLongPollingBot {
                         getObjectsKeyboard(countries, rows);
                     }
                     case 12 -> getStep11Keyboard(rows);
+                    case 13 -> {
+                        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+                        List<List<InlineKeyboardButton>> rowsInlineKeyboard = new ArrayList<>();
+                        List<InlineKeyboardButton> row = new ArrayList<>();
+                        InlineKeyboardButton button = new InlineKeyboardButton();
+                        button.setText(userActivity.getLanguageCode().equals("uz") ? "Do'stlarga ulashish" : "Поделиться с друзьями");
+                        button.setSwitchInlineQuery("https://t.me/Telsotuzbot");
+                        row.add(button);
+                        rowsInlineKeyboard.add(row);
+                        inlineKeyboardMarkup.setKeyboard(rowsInlineKeyboard);
+                        return inlineKeyboardMarkup;
+                    }
+                    case 14 -> getForBooleanKeyboard(userActivity.getLanguageCode(), rows);
                 }
             } else if (userActivity.getRole().equals("admin")) {
                 switch (step) {
@@ -576,6 +621,9 @@ public class Bot extends TelegramLongPollingBot {
                         rows.add(row);
                         row = new KeyboardRow();
                         row.add("Reklama jo'natish");
+                        rows.add(row);
+                        row = new KeyboardRow();
+                        row.add("Ijtimoiy tarmoqlar");
                         rows.add(row);
                     }
                     case 1 -> {
@@ -624,6 +672,15 @@ public class Bot extends TelegramLongPollingBot {
                         List<Battery> all = batteryRepo.findAll();
                         getObjectsKeyboard(all, rows);
                     }
+                    case 31 -> {
+                        KeyboardRow row = new KeyboardRow();
+                        row.add("Telegram");
+                        row.add("Instagram");
+                        rows.add(row);
+                        row = new KeyboardRow();
+                        row.add("Admin username");
+                        rows.add(row);
+                    }
                 }
                 if (step == 8 || step == 9 || step == 12 || step == 15) {
                     KeyboardRow row = new KeyboardRow();
@@ -631,7 +688,7 @@ public class Bot extends TelegramLongPollingBot {
                     rows.add(row);
                 }
             }
-            if (step == 2 || step == 6 || step == 9) replyKeyboardMarkup.setOneTimeKeyboard(true);
+            if (step == 2 || step == 6) replyKeyboardMarkup.setOneTimeKeyboard(true);
             if (step > 0 && step != 3) {
                 KeyboardRow row = new KeyboardRow();
                 row.add(langCode.equals("uz") ? "\uD83D\uDD1D Asosiy Menyu" : "\uD83D\uDD1D Главное Меню");
@@ -643,11 +700,11 @@ public class Bot extends TelegramLongPollingBot {
 
     private void changeLanguage(UserActivity userActivity) {
         sendTextMessage(userActivity.setStep(3), """
-                Assalomu Alaykum  rasmiy botiga xush kelibsiz iltimos tilni tanlang!\uD83D\uDC47
+                Assalomu Alaykum Telsotuz rasmiy botiga xush kelibsiz iltimos tilni tanlang!\uD83D\uDC47
                    \s
-                Здравствуйте, добро пожаловать в официальный бот!,
+                Здравствуйте, добро пожаловать в официальный бот Telsotuz!,
                 Пожалуйста, выберите язык!"""
-        ); //todo bot nomi yoziladi
+        );
     }
 
     private void startMessage(UserActivity userActivity) {
@@ -694,30 +751,36 @@ public class Bot extends TelegramLongPollingBot {
 
     private void finallyMessage(UserActivity userActivity) {
         ProductDto productDto = productDtoMap.get(userActivity.getUser().getId());
+        String text;
         if (userActivity.getLanguageCode().equals("uz"))
-            sendTextMessage(userActivity.setStep(0), "Brendi:" + productDto.getBrand() + "\n" +
+            text = "Brendi:" + productDto.getBrand() + "\n" +
                     "Modeli:" + productDto.getModel() + "\n" +
                     "\n" +
-                    (productDto.getBrand().equalsIgnoreCase("iphone") ? "Batareyka foizi:" + productDto.getBatteryCapacity() +"\n": "") +
+                    (productDto.getBrand().equalsIgnoreCase("iphone") ? "Batareyka foizi:" + productDto.getBatteryCapacity() + "\n" : "") +
                     "Korobka dokumenti:" + (productDto.isDocuments() ? "Bor" : "Yo'q") + "\n" +
                     "Rangi:" + productDto.getColor() + "\n" +
                     "Xotirasi:" + productDto.getStorage() + "\n" +
                     "Ishlab chiqarilgan joyi:" + productDto.getCountry() + "\n" +
                     "Shikast yetganmi?:\n" + (productDto.getDamage() != null ? productDto.getDamage() : "Yo'q") + "\n" +
                     "\n" +
-                    "Narxi:" + productDto.getPrice() + "$");
+                    "Narxi:" + productDto.getPrice() + "$ \n" +
+                    "\nBizni ijtimoiy tarmoqlarda kuzating:\n\n" +
+                    "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
         else
-            sendTextMessage(userActivity.setStep(0), "Бренд:" + productDto.getBrand() + "\n" +
+            text = "Бренд:" + productDto.getBrand() + "\n" +
                     "Модель:" + productDto.getModel() + "\n" +
                     "\n" +
-                    (productDto.getBrand().equalsIgnoreCase("iphone") ? "Процент батареи:" + productDto.getBatteryCapacity() +"\n": "") +
+                    (productDto.getBrand().equalsIgnoreCase("iphone") ? "Процент батареи:" + productDto.getBatteryCapacity() + "\n" : "") +
                     "Коробка и документ:" + (productDto.isDocuments() ? "Есть" : "Нет") + "\n" +
                     "Цвет:" + productDto.getColor() + "\n" +
                     "Память:" + productDto.getStorage() + "\n" +
                     "Место изготовления:" + productDto.getCountry() + "\n" +
                     "Поврежден ли ваш тел?:\n" + (productDto.getDamage() != null ? productDto.getDamage() : "Нет") + "\n" +
                     "\n" +
-                    "Цена:" + productDto.getPrice() + "$");
+                    "Цена:" + productDto.getPrice() + "$ \n" +
+                    "\nСледите за нами в социальных сетях:\n\n" +
+                    "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+        sendTextMessage(userActivity.setStep(13), text);
     }
 
     private <T extends AbsEntity> void getObjectsKeyboard(List<T> list, List<KeyboardRow> rows) {
@@ -780,7 +843,20 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private UserActivity checkUserActivity(Update update) {
-        return userActivityService.findByUserId(update);
+        UserActivity userActivity = userActivityService.findByUserId(update);
+        if (userActivity.getLanguageCode() == null) {
+            if (userActivity.getStep() == 0)
+                changeLanguage(userActivity);
+            else {
+                String text = update.getMessage().getText();
+                switch (text) {
+                    case "O'zbek \uD83C\uDDFA\uD83C\uDDFF" -> userActivity.setLanguageCode("uz");
+                    case "Русский \uD83C\uDDF7\uD83C\uDDFA" -> userActivity.setLanguageCode("ru");
+                }
+            }
+        }
+        userActivityService.userActivityRepository().save(userActivity);
+        return userActivity;
     }
 
     private void sendTextMessage(UserActivity userActivity, String text) {
@@ -795,6 +871,8 @@ public class Bot extends TelegramLongPollingBot {
         sendMessage.setChatId(userActivity.getUser().getId().toString());
         sendMessage.setText(text);
         sendMessage.setReplyMarkup(replyKeyboard);
+        sendMessage.setParseMode("html");
+        sendMessage.setDisableWebPagePreview(true);
         try {
             execute(sendMessage);
         } catch (TelegramApiException e) {
@@ -812,9 +890,5 @@ public class Bot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private User getAdmin() {
-        return userActivityService.userActivityRepository().findByRole("admin").get(0).getUser();
     }
 }

@@ -21,7 +21,7 @@ public record UserActivityService(UserActivityRepository userActivityRepository,
         } else {
             org.telegram.telegrambots.meta.api.objects.User from = message.getFrom();
             User user = userRepository.save(new User(chatId, from.getFirstName(), from.getLastName(), null, from.getUserName()));
-            return userActivityRepository.save(new UserActivity(user, "uz", "user", 0));
+            return userActivityRepository.save(new UserActivity(user, null, "user", 0));
         }
     }
 
