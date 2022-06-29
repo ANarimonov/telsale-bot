@@ -18,7 +18,7 @@ public class Constants {
             Пожалуйста, выберите одну из категорий!""";
 
     public static List<String> menuButtonsUz = Arrays.asList(
-            " Yangi narxlar \uD83D\uDCB2",
+            "Yangi narxlar \uD83D\uDCB2",
             "Telefonni narxlash \uD83D\uDCB8",
             "Adminga murojaat qilish",
             "Sozlamalar ⚙️"

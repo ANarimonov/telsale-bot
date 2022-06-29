@@ -174,10 +174,11 @@ public class Bot extends TelegramLongPollingBot {
                 case 4 -> {
                     Brand brand = brandRepo.findByName(text);
                     if (brand != null) {
-                        productDto.setBrand(brand.getName());
+                        String name = brand.getName();
+                        productDto.setBrand(name);
                         productDtoMap.put(userId, productDto);
-                        sendTextMessage(userActivity.setStep(5), langCode.equals("uz") ? "Telefon modelini tanlang" :
-                                "Введите модель телефона");
+                        sendTextMessage(userActivity.setStep(5), langCode.equals("uz") ? (name.equals("Air pods") ? "Air pods" : "Telefon") + " modelini tanlang" :
+                                "Введите модель " + ((name.equals("Air pods")) ? "аирподс" : "телефон"));
                     }
                 }
                 case 5 -> {
@@ -189,11 +190,13 @@ public class Bot extends TelegramLongPollingBot {
                         productDto.setDamage2(product.getDamage2());
                         productDto.setId(product.getId());
                         productDtoMap.put(userId, productDto);
-                        if (product.getBrand().getName().equalsIgnoreCase("iphone")) {
+                        String name = productDto.getBrand();
+                        if (name.equalsIgnoreCase("iphone"))
                             sendTextMessage(userActivity.setStep(6), langCode.equals("uz") ? "Batareykangizni sig`imini kiriting!\uD83D\uDD0B" : "Введите емкость аккумулятора!\uD83D\uDD0B");
-                        } else
-                            sendTextMessage(userActivity.setStep(7), langCode.equals("uz") ? "Telefoningizni korobka dokumenti bormi?" :
-                                    "У вас есть коробка и документы на ваш телефон?");
+                        else {
+                            sendTextMessage(userActivity.setStep(7), langCode.equals("uz") ? (name.equals("Air pods") ? "Air pods" : "Telefon") + "ingizni korobka dokumenti bormi?" :
+                                    "У вас есть коробка и документы на ваш " + (name.equals("Air pods") ? "аирподс" : "телефон") + "?");
+                        }
                     }
                 }
                 case 6 -> {
@@ -215,7 +218,10 @@ public class Bot extends TelegramLongPollingBot {
                         productDto.setPrice(productDto.getPrice() - productDto.getDocumentPenalty());
                     } else break;
                     productDtoMap.put(userId, productDto);
-                    sendTextMessage(userActivity.setStep(8), langCode.equals("uz") ? "Telefoningiz rangini belgilang!" : "Выберите цвет вашего телефона!");
+                    if (productDto.getBrand().equals("Air pods")) {
+                        sendTextMessage(userActivity.setStep(11), langCode.equals("uz") ? "Air podsingizga shikast yetganmi?" : "Ваш аирподс поврежден?");
+                    } else
+                        sendTextMessage(userActivity.setStep(8), langCode.equals("uz") ? "Telefoningiz rangini belgilang!" : "Выберите цвет вашего телефона!");
                 }
                 case 8 -> {
                     Color color = colorRepo.findByName(text);
@@ -249,20 +255,35 @@ public class Bot extends TelegramLongPollingBot {
                 }
                 case 11 -> {
                     if (text.equals("Ha") || text.equals("Да")) {
-                        sendTextMessage(userActivity.setStep(12), langCode.equals("uz") ? """
-                                Telefoningizni necha foizi shikastlangan?
+                        if (productDto.getBrand().equals("Air pods")) {
+                            sendTextMessage(userActivity.setStep(12), langCode.equals("uz") ? """
+                                    Airpodsingizning necha foizi shikastlangan?
+                                                                    
+                                    0~10% Airpods qirilgan (Chaqasi bor)""" :
+                                    """
+                                            Какой процент вашего аирподса поврежден?\s
+                                                                                        
+                                            0 ~ 10% Аирподс сломан""");
+                        } else
+                            sendTextMessage(userActivity.setStep(12), langCode.equals("uz") ? """
+                                    Telefoningizni necha foizi shikastlangan?
 
-                                0-10% - telefon qirilgan, chaqasi bor, batareyka almashgan.
+                                    0-10% - telefon qirilgan, chaqasi bor, batareyka almashgan.
 
-                                30-50% - ekran almashgan, barmoq skanneri ishlamaydi, Face ID ishlamaydi, juda katta miqdorda zarar yetgan, dog`i bor.""" :
-                                """
-                                        На сколько процентов поврежден ваш телефон?
-                                            
-                                        0-10% - телефон сломан, есть бут, батарея заменена.
-                                            
-                                        30-50% - заменен экран, не работает Touch ID пальцев, не работает Face ID, большое количество повреждений, есть пятна.""");
-                    } else if (text.equals("Yo'q") || text.equals("Нет"))
+                                    30-50% - ekran almashgan, barmoq skanneri ishlamaydi, Face ID ishlamaydi, juda katta miqdorda zarar yetgan, dog`i bor.""" :
+                                    """
+                                            На сколько процентов поврежден ваш телефон?
+                                                
+                                            0-10% - телефон сломан, есть бут, батарея заменена.
+                                                
+                                            30-50% - заменен экран, не работает Touch ID пальцев, не работает Face ID, большое количество повреждений, есть пятна.""");
+                    } else if (text.equals("Yo'q") || text.equals("Нет")) {
                         finallyMessage(userActivity);
+                        sendTextMessage(userActivity.setStep(14), langCode.equals("uz") ? (productDto.getBrand().equals("Air pods") ? "Air pods" : "Telefon") + "ingizni sotasizmi?\n" +
+                                "Bozor narxidan qimmatroq sotishni istasangiz, rasmiy kanalimiz sizga yordam beradi:" :
+                                "Продаётся ли ваш " + (productDto.getBrand().equals("Air pods") ? "аирподс" : "телефон") + "?\n" + "Если вы хотите продать дороже по рыночной цене," +
+                                        " наш официальный канал поможет вам в этом:");
+                    }
                 }
                 case 12 -> {
                     if (text.equals("0~10%")) productDto.setPrice(productDto.getPrice() - productDto.getDamage1());
@@ -271,16 +292,16 @@ public class Bot extends TelegramLongPollingBot {
                     else break;
                     productDto.setDamage(text);
                     productDtoMap.put(userId, productDto);
-                    sendTextMessage(userActivity.setStep(14), userActivity.getLanguageCode().equals("uz") ? "Telefoningizni sotasizmi?\n" +
+                    finallyMessage(userActivity);
+                    sendTextMessage(userActivity.setStep(14), langCode.equals("uz") ? (productDto.getBrand().equals("Air pods") ? "Air pods" : "Telefon") + "ingizni sotasizmi?\n" +
                             "Bozor narxidan qimmatroq sotishni istasangiz, rasmiy kanalimiz sizga yordam beradi:" :
-                            "Продаётся ли ваш телефон?\n" + "Если вы хотите продать дороже по рыночной цене," +
+                            "Продаётся ли ваш " + (productDto.getBrand().equals("Air pods") ? "аирподс" : "телефон") + "?\n" + "Если вы хотите продать дороже по рыночной цене," +
                                     " наш официальный канал поможет вам в этом:");
                 }
                 case 14 -> {
                     if (text.equals("Ha")) {
                         sendTextMessage(userActivity.setStep(0), langCode.equals("uz") ? "Agar qurilmangizni sotmoqchi bo`lsangiz @" + adminUsername + " ga murojaat qiling." : "Если вы хотите продать свой девайс, свяжитесь с @" + adminUsername);
-                    }
-                    else startMessage(userActivity);
+                    } else startMessage(userActivity);
                 }
             }
         } else if (userActivity.getRole().equals("admin")) {
@@ -595,7 +616,13 @@ public class Bot extends TelegramLongPollingBot {
                         List<Country> countries = countryRepo.findByProductId(productDto.getId());
                         getObjectsKeyboard(countries, rows);
                     }
-                    case 12 -> getStep11Keyboard(rows);
+                    case 12 -> {
+                        KeyboardRow row = new KeyboardRow();
+                        row.add("0~10%");
+                        if (!productDto.getBrand().equals("Air pods"))
+                            row.add("30~50%");
+                        rows.add(row);
+                    }
                     case 13 -> {
                         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
                         List<List<InlineKeyboardButton>> rowsInlineKeyboard = new ArrayList<>();
@@ -730,13 +757,6 @@ public class Bot extends TelegramLongPollingBot {
         rows.add(row);
     }
 
-    private void getStep11Keyboard(List<KeyboardRow> rows) {
-        KeyboardRow row = new KeyboardRow();
-        row.add("0~10%");
-        row.add("30~50%");
-        rows.add(row);
-    }
-
     private void getForBooleanKeyboard(String langCode, List<KeyboardRow> rows) {
         KeyboardRow row = new KeyboardRow();
         if (langCode.equals("uz")) {
@@ -753,33 +773,63 @@ public class Bot extends TelegramLongPollingBot {
         ProductDto productDto = productDtoMap.get(userActivity.getUser().getId());
         String text;
         if (userActivity.getLanguageCode().equals("uz"))
-            text = "Brendi:" + productDto.getBrand() + "\n" +
-                    "Modeli:" + productDto.getModel() + "\n" +
-                    "\n" +
-                    (productDto.getBrand().equalsIgnoreCase("iphone") ? "Batareyka foizi:" + productDto.getBatteryCapacity() + "\n" : "") +
-                    "Korobka dokumenti:" + (productDto.isDocuments() ? "Bor" : "Yo'q") + "\n" +
-                    "Rangi:" + productDto.getColor() + "\n" +
-                    "Xotirasi:" + productDto.getStorage() + "\n" +
-                    "Ishlab chiqarilgan joyi:" + productDto.getCountry() + "\n" +
-                    "Shikast yetganmi?:\n" + (productDto.getDamage() != null ? productDto.getDamage() : "Yo'q") + "\n" +
-                    "\n" +
-                    "Narxi:" + productDto.getPrice() + "$ \n" +
-                    "\nBizni ijtimoiy tarmoqlarda kuzating:\n\n" +
-                    "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
-        else
-            text = "Бренд:" + productDto.getBrand() + "\n" +
-                    "Модель:" + productDto.getModel() + "\n" +
-                    "\n" +
-                    (productDto.getBrand().equalsIgnoreCase("iphone") ? "Процент батареи:" + productDto.getBatteryCapacity() + "\n" : "") +
-                    "Коробка и документ:" + (productDto.isDocuments() ? "Есть" : "Нет") + "\n" +
-                    "Цвет:" + productDto.getColor() + "\n" +
-                    "Память:" + productDto.getStorage() + "\n" +
-                    "Место изготовления:" + productDto.getCountry() + "\n" +
-                    "Поврежден ли ваш тел?:\n" + (productDto.getDamage() != null ? productDto.getDamage() : "Нет") + "\n" +
-                    "\n" +
-                    "Цена:" + productDto.getPrice() + "$ \n" +
-                    "\nСледите за нами в социальных сетях:\n\n" +
-                    "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+            if (productDto.getBrand().equals("Air pods"))
+                text = "********************\n" +
+                        "Qurilma Turi:Airpods\n" +
+                        "Modeli:Airpods Model 1.1\n" +
+                        "\n" +
+                        "Shikast yetganmi:" + (productDto.getDamage() == null ? "Yo'q" : "Ha\n" +
+                        "\n" +
+                        "Shikastlanganlik darajasi:" + productDto.getDamage() + "\n") +
+                        "\n" +
+                        "********************\n" +
+                        "Narxi:" + productDto.getPrice() + "$ \n" +
+                        "\nBizni ijtimoiy tarmoqlarda kuzating:\n\n" +
+                        "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+            else {
+                text = "Brendi:" + productDto.getBrand() + "\n" +
+                        "Modeli:" + productDto.getModel() + "\n" +
+                        "\n" +
+                        (productDto.getBrand().equalsIgnoreCase("iphone") ? "Batareyka foizi:" + productDto.getBatteryCapacity() + "\n" : "") +
+                        "Korobka dokumenti:" + (productDto.isDocuments() ? "Bor" : "Yo'q") + "\n" +
+                        "Rangi:" + productDto.getColor() + "\n" +
+                        "Xotirasi:" + productDto.getStorage() + "\n" +
+                        "Ishlab chiqarilgan joyi:" + productDto.getCountry() + "\n" +
+                        "Shikast yetganmi?:\n" + (productDto.getDamage() != null ? productDto.getDamage() : "Yo'q") + "\n" +
+                        "\n" +
+                        "Narxi:" + productDto.getPrice() + "$ \n" +
+                        "\nBizni ijtimoiy tarmoqlarda kuzating:\n\n" +
+                        "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+            }
+        else {
+            if (productDto.getBrand().equals("Air pods"))
+                text = "********************\n" +
+                        "Тип устройства:Airpods\n" +
+                        "Модел:" + productDto.getModel() + "\n" +
+                        "\n" +
+                        "Поврежден ли ваш устройства:" + (productDto.getDamage() == null ? "Нет" : "Да\n" +
+                        "\n" +
+                        "Уровень повреждение:" + productDto.getDamage()) +
+                        "\n" +
+                        "********************\n" +
+                        "Цена:" + productDto.getPrice() + "$ \n" +
+                        "\nСледите за нами в социальных сетях:\n\n" +
+                        "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+            else
+                text = "Бренд:" + productDto.getBrand() + "\n" +
+                        "Модель:" + productDto.getModel() + "\n" +
+                        "\n" +
+                        (productDto.getBrand().equalsIgnoreCase("iphone") ? "Процент батареи:" + productDto.getBatteryCapacity() + "\n" : "") +
+                        "Коробка и документ:" + (productDto.isDocuments() ? "Есть" : "Нет") + "\n" +
+                        "Цвет:" + productDto.getColor() + "\n" +
+                        "Память:" + productDto.getStorage() + "\n" +
+                        "Место изготовления:" + productDto.getCountry() + "\n" +
+                        "Поврежден ли ваш тел?:\n" + (productDto.getDamage() != null ? productDto.getDamage() : "Нет") + "\n" +
+                        "\n" +
+                        "Цена:" + productDto.getPrice() + "$ \n" +
+                        "\nСледите за нами в социальных сетях:\n\n" +
+                        "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+        }
         sendTextMessage(userActivity.setStep(13), text);
     }
 
