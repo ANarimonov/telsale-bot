@@ -195,7 +195,7 @@ public class Bot extends TelegramLongPollingBot {
                 case 6 -> {
                     Battery byName = batteryRepo.findByName(text);
                     if (byName != null) {
-                        Penalty penalty = penaltyRepo.findByBatteryId(byName.getId());
+                        Penalty penalty = penaltyRepo.findByBatteryIdAndProductId(byName.getId(),productDto.getId());
                         productDto.setBatteryCapacity(byName.getName());
                         productDto.setPrice(productDto.getPrice() - penalty.getAmount());
                         productDtoMap.put(userId, productDto);
@@ -225,7 +225,7 @@ public class Bot extends TelegramLongPollingBot {
                 case 9 -> {
                     Storage storage = storageRepo.findByName(text);
                     if (storage != null) {
-                        Penalty penalty = penaltyRepo.findByStorageId(storage.getId());
+                        Penalty penalty = penaltyRepo.findByStorageIdAndProductId(storage.getId(),productDto.getId());
                         productDto.setStorage(text);
                         productDto.setPrice(productDto.getPrice() - penalty.getAmount());
                         productDtoMap.put(userId, productDto);
@@ -236,7 +236,7 @@ public class Bot extends TelegramLongPollingBot {
                 case 10 -> {
                     Country country = countryRepo.findByName(text);
                     if (country != null) {
-                        Penalty penalty = penaltyRepo.findByCountryId(country.getId());
+                        Penalty penalty = penaltyRepo.findByCountryIdAndProductId(country.getId(),productDto.getId());
                         productDto.setPrice(productDto.getPrice() - penalty.getAmount());
                         productDto.setCountry(text);
                         productDtoMap.put(userId, productDto);
