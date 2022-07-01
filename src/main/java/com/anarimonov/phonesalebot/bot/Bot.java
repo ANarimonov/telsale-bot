@@ -785,7 +785,7 @@ public class Bot extends TelegramLongPollingBot {
                         "********************\n" +
                         "Narxi:" + productDto.getPrice() + "$ \n" +
                         "\nBizni ijtimoiy tarmoqlarda kuzating:\n\n" +
-                        "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+                        "<a href=\"" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
             else {
                 text = "Brendi:" + productDto.getBrand() + "\n" +
                         "Modeli:" + productDto.getModel() + "\n" +
@@ -799,7 +799,7 @@ public class Bot extends TelegramLongPollingBot {
                         "\n" +
                         "Narxi:" + productDto.getPrice() + "$ \n" +
                         "\nBizni ijtimoiy tarmoqlarda kuzating:\n\n" +
-                        "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+                        "<a href=\"" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
             }
         else {
             if (productDto.getBrand().equals("Air pods"))
@@ -814,7 +814,7 @@ public class Bot extends TelegramLongPollingBot {
                         "********************\n" +
                         "Цена:" + productDto.getPrice() + "$ \n" +
                         "\nСледите за нами в социальных сетях:\n\n" +
-                        "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+                        "<a href=\"" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
             else
                 text = "Бренд:" + productDto.getBrand() + "\n" +
                         "Модель:" + productDto.getModel() + "\n" +
@@ -828,7 +828,7 @@ public class Bot extends TelegramLongPollingBot {
                         "\n" +
                         "Цена:" + productDto.getPrice() + "$ \n" +
                         "\nСледите за нами в социальных сетях:\n\n" +
-                        "<a href=\"t.me/" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+                        "<a href=\"" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
         }
         sendTextMessage(userActivity.setStep(13), text);
     }
