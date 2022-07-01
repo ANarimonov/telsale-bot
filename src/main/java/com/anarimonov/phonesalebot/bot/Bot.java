@@ -136,7 +136,7 @@ public class Bot extends TelegramLongPollingBot {
 
     private StringBuilder getProductList(Brand byName) {
         List<Product> products;
-        products = productRepo.findByBrandIdOrderById(byName.getId());
+        products = productRepo.findByBrandId(byName.getId());
         StringBuilder productList = new StringBuilder();
         for (Product product1 : products) {
             productList.append("ID:").append(product1.getId()).append(", ").append(product1.getName()).append("\n");
@@ -494,7 +494,7 @@ public class Bot extends TelegramLongPollingBot {
                 case 22 -> {
                     boolean flag = false;
                     try {
-                        Product product1 = productRepo.findByIdAndBrandIdAndOrderById(Integer.parseInt(text), product.getBrand().getId());
+                        Product product1 = productRepo.findByIdAndBrandId(Integer.parseInt(text), product.getBrand().getId());
                         productRepo.delete(product1);
                     } catch (NumberFormatException e) {
                         sendTextMessage(userActivity, "Faqatgina mahsulot ID sini kiriting");
@@ -516,7 +516,7 @@ public class Bot extends TelegramLongPollingBot {
                     }
                 }
                 case 24 -> {
-                    Product product1 = productRepo.findByIdAndBrandIdAndOrderById(Integer.parseInt(text), product.getBrand().getId());
+                    Product product1 = productRepo.findByIdAndBrandId(Integer.parseInt(text), product.getBrand().getId());
                     if (product1 != null) {
                         product.setId(product1.getId());
                         sendTextMessage(userActivity.setStep(25), "Yangi narxni kiriting");
@@ -596,7 +596,7 @@ public class Bot extends TelegramLongPollingBot {
                     }
                     case 5 -> {
                         Brand brand = brandRepo.findByName(productDto.getBrand());
-                        List<Product> products = productRepo.findByBrandIdOrderById(brand.getId());
+                        List<Product> products = productRepo.findByBrandId(brand.getId());
                         getObjectsKeyboard(products, rows);
                     }
                     case 6 -> {
