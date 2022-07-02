@@ -111,6 +111,7 @@ public class Bot extends TelegramLongPollingBot {
                 case "Sozlamalar ⚙️", "Опции ⚙️" -> settings(userActivity);
                 case "Telefonni narxlash \uD83D\uDCB8", "Ценообразование телефонов\uD83D\uDCB2" ->
                         pricingMyPhone(userActivity);
+                case "/stats" -> sendTextMessage(userActivity.setStep(0),"Hozirda bot faydalanuvchilari soni "+userActivityService.userActivityRepository().count()+"ta");
                 default -> getDefaultMessage(message, userActivity);
             }
         }
