@@ -212,9 +212,9 @@ public class Bot extends TelegramLongPollingBot {
                     }
                 }
                 case 7 -> {
-                    if (text.equals("Ha") || text.equals("Да")) {
+                    if (text.equals("Ha ✅") || text.equals("Да ✅")) {
                         productDto.setDocuments(true);
-                    } else if (text.equals("Yo'q") || text.equals("Нет")) {
+                    } else if (text.equals("Yo'q 🚫") || text.equals("Нет 🚫")) {
                         productDto.setDocuments(false);
                         productDto.setPrice(productDto.getPrice() - productDto.getDocumentPenalty());
                     } else break;
@@ -255,7 +255,7 @@ public class Bot extends TelegramLongPollingBot {
                     }
                 }
                 case 11 -> {
-                    if (text.equals("Ha") || text.equals("Да")) {
+                    if (text.equals("Ha, shikast yetgan \uD83D\uDCA5") || text.equals("Да, поврежден \uD83D\uDCA5")) {
                         if (productDto.getBrand().equals("Air pods")) {
                             sendTextMessage(userActivity.setStep(12), langCode.equals("uz") ? """
                                     Airpodsingizning necha foizi shikastlangan?
@@ -278,7 +278,7 @@ public class Bot extends TelegramLongPollingBot {
                                             0-10% - телефон сломан, есть бут, батарея заменена.
                                                 
                                             30-50% - заменен экран, не работает Touch ID пальцев, не работает Face ID, большое количество повреждений, есть пятна.""");
-                    } else if (text.equals("Yo'q") || text.equals("Нет")) {
+                    } else if (text.equals("Yo'q, yetmagan! ✅") || text.equals("Нет, не поврежден! ✅")) {
                         finallyMessage(userActivity);
                         sendTextMessage(userActivity.setStep(14), langCode.equals("uz") ? (productDto.getBrand().equals("Air pods") ? "Air pods" : "Telefon") + "ingizni sotasizmi?\n" +
                                 "Bozor narxidan qimmatroq sotishni istasangiz, rasmiy kanalimiz sizga yordam beradi:" :
@@ -300,7 +300,7 @@ public class Bot extends TelegramLongPollingBot {
                                     " наш официальный канал поможет вам в этом:");
                 }
                 case 14 -> {
-                    if (text.equals("Ha")) {
+                    if (text.equals("Ha ✅")) {
                         sendTextMessage(userActivity.setStep(0), langCode.equals("uz") ? "Agar qurilmangizni sotmoqchi bo`lsangiz @" + adminUsername + " ga murojaat qiling." : "Если вы хотите продать свой девайс, свяжитесь с @" + adminUsername);
                     } else startMessage(userActivity);
                 }
@@ -408,7 +408,7 @@ public class Bot extends TelegramLongPollingBot {
                 }
                 case 12 -> {
                     if (text.equals("Keyingi ➡️") && product.getCountries() != null) {
-                        sendTextMessage(userActivity.setStep(14), "Karobka & dokument yo'q bo'lganda olinadigan miqdorni kiriting");
+                        sendTextMessage(userActivity.setStep(14), "Karobka & dokument Yo'q 🚫 bo'lganda olinadigan miqdorni kiriting");
                         return;
                     }
                     if (!text.equals("Keyingi ➡️")) {
@@ -604,7 +604,7 @@ public class Bot extends TelegramLongPollingBot {
                         List<Battery> batteries = batteryRepo.findByProductId(productDto.getId());
                         getObjectsKeyboard(batteries, rows);
                     }
-                    case 7, 11 -> getForBooleanKeyboard(langCode, rows);
+                    case 7 -> getForBooleanKeyboard(langCode, rows);
                     case 8 -> {
                         List<Color> colors = colorRepo.findByProductId(productDto.getId());
                         getObjectsKeyboard(colors, rows);
@@ -616,6 +616,17 @@ public class Bot extends TelegramLongPollingBot {
                     case 10 -> {
                         List<Country> countries = countryRepo.findByProductId(productDto.getId());
                         getObjectsKeyboard(countries, rows);
+                    }
+                    case 11 -> {
+                        KeyboardRow row = new KeyboardRow();
+                        if (langCode.equals("uz")) {
+                            row.add("Yo'q, yetmagan! ✅");
+                            row.add("Ha, shikast yetgan \uD83D\uDCA5");
+                        } else {
+                            row.add("Нет, не поврежден! ✅");
+                            row.add("Да, поврежден \uD83D\uDCA5");
+                        }
+                        rows.add(row);
                     }
                     case 12 -> {
                         KeyboardRow row = new KeyboardRow();
@@ -761,11 +772,11 @@ public class Bot extends TelegramLongPollingBot {
     private void getForBooleanKeyboard(String langCode, List<KeyboardRow> rows) {
         KeyboardRow row = new KeyboardRow();
         if (langCode.equals("uz")) {
-            row.add("Ha");
-            row.add("Yo'q");
+            row.add("Ha ✅");
+            row.add("Yo'q 🚫");
         } else {
-            row.add("Да");
-            row.add("Нет");
+            row.add("Да ✅");
+            row.add("Нет 🚫");
         }
         rows.add(row);
     }
