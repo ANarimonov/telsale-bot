@@ -98,7 +98,7 @@ public class Bot extends TelegramLongPollingBot {
     private void getMessage(Update update, UserActivity userActivity) {
         Message message = update.getMessage();
         if (userActivity.getStep() == 30 && userActivity.getRole().equals("admin"))
-            if (message.hasText() && !(message.getText().equals("\uD83D\uDD1D Asosiy Menyu") || message.getText().equals("\uD83D\uDD1D Главное Меню") || message.getText().equals("/start"))) {
+            if (message.hasText() && !(message.getText().equals("\uD83D\uDD1D Asosiy Menyu") || message.getText().equals("\uD83D\uDD1D Главное Меню") || message.getText().equals("/start") || message.getText().equals("/stats"))) {
                 for (User user : userActivityService.userRepository().findAll())
                     sendForwardMessage(user.getId().toString(), message.getFrom().getId().toString(), message.getMessageId());
                 userActivity.setStep(0);
