@@ -32,10 +32,6 @@ public class UserActivity {
         this.step = step;
     }
 
-    public UserActivity setId(Integer id) {
-        this.id = id;
-        return this;
-    }
 
     public void setLanguageCode(String languageCode) {
         this.languageCode = languageCode;

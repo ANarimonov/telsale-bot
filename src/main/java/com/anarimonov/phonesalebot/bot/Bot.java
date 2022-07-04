@@ -788,7 +788,7 @@ public class Bot extends TelegramLongPollingBot {
             if (productDto.getBrand().equals("Air pods"))
                 text = "********************\n" +
                         "Qurilma Turi:Airpods\n" +
-                        "Modeli:Airpods Model 1.1\n" +
+                        "Modeli:"+productDto.getModel()+"\n" +
                         "\n" +
                         "Shikast yetganmi:" + (productDto.getDamage() == null ? "Yo'q" : "Ha\n" +
                         "\n" +
@@ -891,7 +891,6 @@ public class Bot extends TelegramLongPollingBot {
     private InlineKeyboardMarkup getJoinChannelRequest(UserActivity userActivity) {
         InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
-
         for (Channel channel : channelRepo.findAll()) {
             List<InlineKeyboardButton> keyboardRow = new ArrayList<>();
             InlineKeyboardButton button = new InlineKeyboardButton();
