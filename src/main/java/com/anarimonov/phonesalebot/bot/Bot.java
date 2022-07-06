@@ -38,9 +38,9 @@ public class Bot extends TelegramLongPollingBot {
     private final Map<Long, Product> productMap = new HashMap<>();
     private final PenaltyRepository penaltyRepo;
     private final BatteryRepository batteryRepo;
-    private String telegramUrl;
-    private String instagramUrl;
-    private String adminUsername;
+    private String telegramUrl = "https://t.me/Telsotuz";
+    private String instagramUrl = "https://instagram.com/telseluz_";
+    private String adminUsername = "Telsotuzadmin";
 
     @Override
     public String getBotUsername() {
