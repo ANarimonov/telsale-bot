@@ -22,4 +22,8 @@ public class ProductDto {
     private int damage2;
     private String storage;
     private boolean forSelling;
+    private String phoneNumber;
+    private String swap;
+    private String condition;
+    private String place;
 }

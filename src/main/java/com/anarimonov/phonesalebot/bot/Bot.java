@@ -10,13 +10,13 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.PromoteChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -59,8 +59,6 @@ public class Bot extends TelegramLongPollingBot {
             if (update.hasMessage()) {
                 if (checkJoinedChannels(userActivity))
                     getMessage(update, userActivity);
-            } else if (update.hasCallbackQuery()) {
-                getCallBackQuery(update, userActivity);
             }
     }
 
@@ -82,25 +80,14 @@ public class Bot extends TelegramLongPollingBot {
         return true;
     }
 
-    private void getCallBackQuery(Update update, UserActivity userActivity) {
-        CallbackQuery callbackQuery = update.getCallbackQuery();
-        switch (userActivity.getStep()) {
-            case 1 -> {
-
-            }
-            case 2 -> {
-                String data = callbackQuery.getData();
-                System.out.println(data);
-            }
-        }
-    }
 
     private void getMessage(Update update, UserActivity userActivity) {
         Message message = update.getMessage();
+        Long id = message.getFrom().getId();
         if (userActivity.getStep() == 30 && userActivity.getRole().equals("admin"))
-            if (message.hasText() && !(message.getText().equals("\uD83D\uDD1D Asosiy Menyu") || message.getText().equals("\uD83D\uDD1D Главное Меню") || message.getText().equals("/start") || message.getText().equals("/stats"))) {
+            if (!message.hasText() || message.hasText() && !(message.getText().equals("\uD83D\uDD1D Asosiy Menyu") || message.getText().equals("\uD83D\uDD1D Главное Меню") || message.getText().equals("/start") || message.getText().equals("/stats"))) {
                 for (User user : userActivityService.userRepository().findAll())
-                    sendForwardMessage(user.getId().toString(), message.getFrom().getId().toString(), message.getMessageId());
+                    sendForwardMessage(user.getId().toString(), id.toString(), message.getMessageId());
                 userActivity.setStep(0);
             }
         if (message.hasText()) {
@@ -111,8 +98,18 @@ public class Bot extends TelegramLongPollingBot {
                 case "Sozlamalar ⚙️", "Опции ⚙️" -> settings(userActivity);
                 case "Telefonni narxlash \uD83D\uDCB8", "Ценообразование телефонов\uD83D\uDCB2" ->
                         pricingMyPhone(userActivity);
-                case "/stats" -> sendTextMessage(userActivity.setStep(0),"Hozirda bot faydalanuvchilari soni "+userActivityService.userActivityRepository().count()+"ta");
+                case "/stats" ->
+                        sendTextMessage(userActivity.setStep(0), "Hozirda bot faydalanuvchilari soni " + userActivityService.userActivityRepository().count() + "ta");
                 default -> getDefaultMessage(message, userActivity);
+            }
+        } else if (message.hasContact()) {
+            if (userActivity.getStep() == 16) {
+                String phoneNumber = message.getContact().getPhoneNumber();
+                userActivity.getUser().setPhoneNumber(phoneNumber);
+                ProductDto productDto = productDtoMap.get(id);
+                productDto.setPhoneNumber(phoneNumber);
+                productDtoMap.put(id, productDto);
+                sendTextMessage(userActivity.setStep(17), userActivity.getLanguageCode().equals("uz") ? "Almashtiriladigan telfonni kiriting yoki Yo'q ni bosing" : "Введите телефон для обмен или нажмите Нет");
             }
         }
         userActivityService.update(userActivity);
@@ -124,7 +121,6 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void settings(UserActivity userActivity) {
-
         sendTextMessage(userActivity.setStep(2),
                 userActivity.getLanguageCode().equals("uz") ?
                         "Kategoriyalardan birini tanlang" : "Выберите одну из категорий");
@@ -300,9 +296,32 @@ public class Bot extends TelegramLongPollingBot {
                                     " наш официальный канал поможет вам в этом:");
                 }
                 case 14 -> {
-                    if (text.equals("Ha ✅")) {
-                        sendTextMessage(userActivity.setStep(0), langCode.equals("uz") ? "Agar qurilmangizni sotmoqchi bo`lsangiz @" + adminUsername + " ga murojaat qiling." : "Если вы хотите продать свой девайс, свяжитесь с @" + adminUsername);
-                    } else startMessage(userActivity);
+                    if (text.equals("Ha ✅"))
+                        sendTextMessage(userActivity.setStep(15), langCode.equals("uz") ? "Telefon holatini kiriting" : "Введите состояния телефона");
+                    else startMessage(userActivity);
+                }
+                case 15 -> {
+                    productDto.setCondition(text);
+                    productDtoMap.put(userId, productDto);
+                    sendTextMessage(userActivity.setStep(16), langCode.equals("uz") ? "Telefon raqamingizni +998********* formatda yuboring yoki \"Share contact\" tugmasini bosing" : "Отправьте свой номер телефона в формате +998************ или нажмите кнопку \"Поделиться контактом\"");
+                }
+                case 16 -> {
+                    if (text.startsWith("+998")) {
+                        productDto.setPhoneNumber(text);
+                        productDtoMap.put(userId, productDto);
+                        sendTextMessage(userActivity.setStep(17), langCode.equals("uz") ? "Almashtiriladigan telfonni kiriting yoki Yo'q ni bosing" : "Введите телефон для обмен или нажмите Нет");
+                    } else
+                        sendTextMessage(userActivity, langCode.equals("uz") ? "Telefon raqamingizni +998********* formatda yuboring yoki \"Share contact\" tugmasini bosing" : "Отправьте свой номер телефона в формате +998************ или нажмите кнопку \"Поделиться контактом\"");
+                }
+                case 17 -> {
+                    productDto.setSwap(text);
+                    productDtoMap.put(userId, productDto);
+                    sendTextMessage(userActivity.setStep(18), langCode.equals("uz") ? "Shaxar yoki viloyatingizni kiriting" : "Введите свой регион");
+                }
+                case 18 -> {
+                    productDto.setPlace(text);
+                    productDtoMap.put(userId, productDto);
+                    finallyMessage(userActivity);
                 }
             }
         } else if (userActivity.getRole().equals("admin")) {
@@ -648,6 +667,16 @@ public class Bot extends TelegramLongPollingBot {
                         return inlineKeyboardMarkup;
                     }
                     case 14 -> getForBooleanKeyboard(userActivity.getLanguageCode(), rows);
+                    case 16 -> {
+                        KeyboardRow row = new KeyboardRow();
+                        row.add(KeyboardButton.builder().requestContact(true).text("Share contact").build());
+                        rows.add(row);
+                    }
+                    case 17 -> {
+                        KeyboardRow row = new KeyboardRow();
+                        row.add(langCode.equals("uz")? "Yo'q" : "Нет");
+                        rows.add(row);
+                    }
                 }
             } else if (userActivity.getRole().equals("admin")) {
                 switch (step) {
@@ -784,11 +813,11 @@ public class Bot extends TelegramLongPollingBot {
     private void finallyMessage(UserActivity userActivity) {
         ProductDto productDto = productDtoMap.get(userActivity.getUser().getId());
         String text;
-        if (userActivity.getLanguageCode().equals("uz"))
-            if (productDto.getBrand().equals("Air pods"))
+        if (productDto.getBrand().equals("Air pods"))
+            if (userActivity.getLanguageCode().equals("uz")) {
                 text = "********************\n" +
                         "Qurilma Turi:Airpods\n" +
-                        "Modeli:"+productDto.getModel()+"\n" +
+                        "Modeli:" + productDto.getModel() + "\n" +
                         "\n" +
                         "Shikast yetganmi:" + (productDto.getDamage() == null ? "Yo'q" : "Ha\n" +
                         "\n" +
@@ -798,23 +827,7 @@ public class Bot extends TelegramLongPollingBot {
                         "Narxi:" + productDto.getPrice() + "$ \n" +
                         "\nBizni ijtimoiy tarmoqlarda kuzating:\n\n" +
                         "<a href=\"" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
-            else {
-                text = "Brendi:" + productDto.getBrand() + "\n" +
-                        "Modeli:" + productDto.getModel() + "\n" +
-                        "\n" +
-                        (productDto.getBrand().equalsIgnoreCase("iphone") ? "Batareyka foizi:" + productDto.getBatteryCapacity() + "\n" : "") +
-                        "Korobka dokumenti:" + (productDto.isDocuments() ? "Bor" : "Yo'q") + "\n" +
-                        "Rangi:" + productDto.getColor() + "\n" +
-                        "Xotirasi:" + productDto.getStorage() + "\n" +
-                        "Ishlab chiqarilgan joyi:" + productDto.getCountry() + "\n" +
-                        "Shikast yetganmi?:\n" + (productDto.getDamage() != null ? productDto.getDamage() : "Yo'q") + "\n" +
-                        "\n" +
-                        "Narxi:" + productDto.getPrice() + "$ \n" +
-                        "\nBizni ijtimoiy tarmoqlarda kuzating:\n\n" +
-                        "<a href=\"" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
-            }
-        else {
-            if (productDto.getBrand().equals("Air pods"))
+            } else
                 text = "********************\n" +
                         "Тип устройства:Airpods\n" +
                         "Модел:" + productDto.getModel() + "\n" +
@@ -827,20 +840,22 @@ public class Bot extends TelegramLongPollingBot {
                         "Цена:" + productDto.getPrice() + "$ \n" +
                         "\nСледите за нами в социальных сетях:\n\n" +
                         "<a href=\"" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
-            else
-                text = "Бренд:" + productDto.getBrand() + "\n" +
-                        "Модель:" + productDto.getModel() + "\n" +
-                        "\n" +
-                        (productDto.getBrand().equalsIgnoreCase("iphone") ? "Процент батареи:" + productDto.getBatteryCapacity() + "\n" : "") +
-                        "Коробка и документ:" + (productDto.isDocuments() ? "Есть" : "Нет") + "\n" +
-                        "Цвет:" + productDto.getColor() + "\n" +
-                        "Память:" + productDto.getStorage() + "\n" +
-                        "Место изготовления:" + productDto.getCountry() + "\n" +
-                        "Поврежден ли ваш тел?:\n" + (productDto.getDamage() != null ? productDto.getDamage() : "Нет") + "\n" +
-                        "\n" +
-                        "Цена:" + productDto.getPrice() + "$ \n" +
-                        "\nСледите за нами в социальных сетях:\n\n" +
-                        "<a href=\"" + telegramUrl + "\" >Telegram</a> | <a href=\"" + instagramUrl + "\">Instagram</a>";
+        else {
+            text = "\uD83D\uDCF1 " + (productDto.getModel().startsWith("Iphone") ? productDto.getModel() : productDto.getBrand() +
+                    " " + productDto.getModel()) + "\n" +
+                    "\uD83E\uDDE0 " + productDto.getStorage() + "\n" +
+                    (productDto.getBrand().equalsIgnoreCase("iphone") ? "\uD83D\uDD0B " + productDto.getBatteryCapacity() + "\n" : "") +
+                    "\uD83C\uDF0E " + productDto.getCountry() + "\n" +
+                    (productDto.getCondition() != null ? "\uD83D\uDEE0 " + productDto.getCondition() + "\n" : "") +
+                    "\uD83C\uDFA8 " + productDto.getColor() + "\n" +
+                    "\uD83D\uDCE6 " + (productDto.isDocuments() ? "Bor" : "Yo'q") + "\n" +
+                    "\uD83D\uDCB0 " + productDto.getPrice() + "\n" +
+                    (productDto.getSwap() != null ? "♻️ " + productDto.getSwap() + "\n" +
+                            "\uD83D\uDCDE " + productDto.getPhoneNumber() + "\n" +
+                            "\uD83D\uDEA9: " + productDto.getPlace() + "\n" : "") +
+                    "\n" +
+                    "➡️ Ushbu bot orqali telefoningizni narxini bilishingiz mumkin! \n" +
+                    "\uD83C\uDD94 @Telsotuzbot";
         }
         sendTextMessage(userActivity.setStep(13), text);
     }
