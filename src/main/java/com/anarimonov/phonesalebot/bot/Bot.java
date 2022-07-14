@@ -322,6 +322,7 @@ public class Bot extends TelegramLongPollingBot {
                     productDto.setPlace(text);
                     productDtoMap.put(userId, productDto);
                     finallyMessage(userActivity);
+                    sendTextMessage(userActivity.setStep(0), langCode.equals("uz") ? "Agar qurilmangizni sotmoqchi bo`lsangiz @" + adminUsername + " ga murojaat qiling." : "Если вы хотите продать свой девайс, свяжитесь с @" + adminUsername);
                 }
             }
         } else if (userActivity.getRole().equals("admin")) {
