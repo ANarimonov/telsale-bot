@@ -36,7 +36,7 @@ public class DataLoader implements CommandLineRunner {
         }
         while (true){
             String forObject = restTemplate.getForObject(
-                    "https://telsaleuz.herokuapp.com/api/test/hello",
+                    "https://telsale-bot.herokuapp.com/api/test/hello",
                     String.class
             );
             System.out.println(forObject);
