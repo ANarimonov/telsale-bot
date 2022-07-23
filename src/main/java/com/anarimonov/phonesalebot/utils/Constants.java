@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Constants {
-    public static final String botToken = "5529029867:AAH48MTEzsfnsmnvkZ7-n91ocZgrdLsmq8M";
-    public static final String botUsername = "telsotuzbot";
+    public static final String botToken = "5401421696:AAFariWTwECRqAC8ncjZme85sSepTu3MrYU";
+    public static final String botUsername = "phone_sale_bot";
 
 
     public static final String menuMessageUz = """
