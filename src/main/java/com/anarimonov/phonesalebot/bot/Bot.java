@@ -117,7 +117,7 @@ public class Bot extends TelegramLongPollingBot {
 
     private void pricingMyPhone(UserActivity userActivity) {
         sendTextMessage(userActivity.setStep(4), userActivity.getLanguageCode().equals("uz") ?
-                "Kategoriyalardan birini tanlang" : "Выберите одну из категорий");
+                "Kategoriyalardan birini tanlang " : "Выберите одну из категорий");
     }
 
     private void settings(UserActivity userActivity) {
