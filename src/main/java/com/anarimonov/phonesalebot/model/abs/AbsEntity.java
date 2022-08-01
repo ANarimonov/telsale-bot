@@ -16,7 +16,6 @@ public abstract class AbsEntity {
     public AbsEntity(String name) {
         this.name = name;
     }
-
     @Id
     @GeneratedValue
     private Integer id;

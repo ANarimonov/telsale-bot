@@ -4,13 +4,19 @@ import com.anarimonov.phonesalebot.model.User;
 import com.anarimonov.phonesalebot.model.UserActivity;
 import com.anarimonov.phonesalebot.repository.UserActivityRepository;
 import com.anarimonov.phonesalebot.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.util.List;
+
 
 @Service
-public record UserActivityService(UserActivityRepository userActivityRepository, UserRepository userRepository) {
+@RequiredArgsConstructor
+public class UserActivityService {
+    private final UserActivityRepository userActivityRepository;
+    private final UserRepository userRepository;
 
     public UserActivity findByUserId(Update update) {
         Message message = update.getMessage();
@@ -25,7 +31,23 @@ public record UserActivityService(UserActivityRepository userActivityRepository,
         }
     }
 
+    public UserActivity findByUserId(Long id) {
+        return userActivityRepository.findByUserId(id);
+    }
+
+    public void save(UserActivity userActivity) {
+        userActivityRepository.save(userActivity);
+    }
+
     public void update(UserActivity userActivity) {
         userActivityRepository.save(userActivity);
+    }
+
+    public Long count() {
+        return userActivityRepository.count();
+    }
+
+    public List<User> findAllUser() {
+        return userRepository.findAll();
     }
 }
