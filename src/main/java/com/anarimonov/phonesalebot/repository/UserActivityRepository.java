@@ -9,5 +9,4 @@ import java.util.List;
 @Repository
 public interface UserActivityRepository extends JpaRepository<UserActivity, Integer> {
     UserActivity findByUserId(Long userId);
-    List<UserActivity> findByRole(String role);
 }
