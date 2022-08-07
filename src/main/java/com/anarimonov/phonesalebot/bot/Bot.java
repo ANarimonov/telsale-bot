@@ -12,12 +12,8 @@ import org.telegram.telegrambots.meta.api.methods.groupadministration.PromoteCha
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.*;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.*;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.*;
@@ -56,10 +52,9 @@ public class Bot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         UserActivity userActivity = checkUserActivity(update);
         if (userActivity.getLanguageCode() != null)
-            if (update.hasMessage()) {
+            if (update.hasMessage())
                 if (checkJoinedChannels(userActivity))
                     getMessage(update, userActivity);
-            }
     }
 
     private boolean checkJoinedChannels(UserActivity userActivity) {
@@ -94,10 +89,15 @@ public class Bot extends TelegramLongPollingBot {
             switch (message.getText()) {
                 case "/start", "\uD83D\uDD1D Asosiy Menyu", "\uD83D\uDD1D Главное Меню" -> startMessage(userActivity);
                 case "Новые цены \uD83D\uDCB2", "Yangi narxlar \uD83D\uDCB2" -> getNewPrices(userActivity);
-                case "Связаться с админом", "Adminga murojaat qilish" -> connectToAdmin(userActivity);
-                case "Sozlamalar ⚙️", "Опции ⚙️" -> settings(userActivity);
+                case "Связаться с админом", "Adminga murojaat qilish" ->
+                        sendTextMessage(userActivity.setStep(0), userActivity.getLanguageCode().equals("uz") ? "Adminga bog'lanish uchun ushbu \"username\" ustiga bosing ➡️ @" +
+                                adminUsername : "Нажмите на это «имя пользователя», чтобы связаться с администратором ➡️@" + adminUsername);
+                case "Sozlamalar ⚙️", "Опции ⚙️" -> sendTextMessage(userActivity.setStep(2),
+                        userActivity.getLanguageCode().equals("uz") ?
+                                "Kategoriyalardan birini tanlang" : "Выберите одну из категорий");
                 case "Telefonni narxlash \uD83D\uDCB8", "Ценообразование телефонов\uD83D\uDCB2" ->
-                        pricingMyPhone(userActivity);
+                        sendTextMessage(userActivity.setStep(4), userActivity.getLanguageCode().equals("uz") ?
+                                "Kategoriyalardan birini tanlang " : "Выберите одну из категорий");
                 case "/stats" ->
                         sendTextMessage(userActivity.setStep(0), "Hozirda bot faydalanuvchilari soni " + userActivityService.count() + "ta");
                 default -> getDefaultMessage(message, userActivity);
@@ -115,29 +115,12 @@ public class Bot extends TelegramLongPollingBot {
         userActivityService.update(userActivity);
     }
 
-    private void pricingMyPhone(UserActivity userActivity) {
-        sendTextMessage(userActivity.setStep(4), userActivity.getLanguageCode().equals("uz") ?
-                "Kategoriyalardan birini tanlang " : "Выберите одну из категорий");
-    }
-
-    private void settings(UserActivity userActivity) {
-        sendTextMessage(userActivity.setStep(2),
-                userActivity.getLanguageCode().equals("uz") ?
-                        "Kategoriyalardan birini tanlang" : "Выберите одну из категорий");
-    }
-
-    private void connectToAdmin(UserActivity userActivity) {
-        sendTextMessage(userActivity.setStep(0), userActivity.getLanguageCode().equals("uz") ? "Adminga bog'lanish uchun ushbu \"username\" ustiga bosing ➡️ @" +
-                adminUsername : "Нажмите на это «имя пользователя», чтобы связаться с администратором ➡️@" + adminUsername);
-    }
-
     private StringBuilder getProductList(Brand byName) {
         List<Product> products;
         products = productRepo.findByBrandIdOrderById(byName.getId());
         StringBuilder productList = new StringBuilder();
-        for (Product product1 : products) {
+        for (Product product1 : products)
             productList.append("ID:").append(product1.getId()).append(", ").append(product1.getName()).append("\n");
-        }
         productList.append("Mahsulot IDsini kiriting.");
         return productList;
     }
@@ -151,189 +134,243 @@ public class Bot extends TelegramLongPollingBot {
         if (productDto == null)
             productDto = new ProductDto();
         if (userActivity.getRole().equals("user")) {
-            switch (step) {
-                case 1:
-                    Brand byName = brandRepo.findByName(text);
-                    if (byName != null) {
-                        sendTextMessage(userActivity.setStep(0), byName.getMessage());
-                    } else getNewPrices(userActivity);
-                    break;
-                case 2:
-                    if (text.equals("Сменить язык \uD83C\uDF0E") || text.equals("Tilni o`zgartirish \uD83C\uDF0E"))
-                        changeLanguage(userActivity);
-                    break;
-                case 3:
-                    if (text.equals("O'zbek \uD83C\uDDFA\uD83C\uDDFF"))
-                        userActivity.setLanguageCode("uz");
-                    else if (text.equals("Русский \uD83C\uDDF7\uD83C\uDDFA")) userActivity.setLanguageCode("ru");
-                    sendTextMessage(userActivity.setStep(0), userActivity.getLanguageCode().equals("uz") ? "Til o'rnatildi" : "Язык установлен");
-                    break;
-                case 4:
-                    Brand brand = brandRepo.findByName(text);
-                    if (brand != null) {
-                        String name = brand.getName();
-                        productDto.setBrand(name);
-                        productDtoMap.put(userId, productDto);
+            if (text.equals("Ortga ◀️") || text.equals("Назад ◀️")) {
+                switch (step) {
+                    case 1, 2, 4 -> startMessage(userActivity);
+                    case 3 -> sendTextMessage(userActivity.setStep(2),
+                            userActivity.getLanguageCode().equals("uz") ?
+                                    "Kategoriyalardan birini tanlang" : "Выберите одну из категорий");
+                    case 5 -> sendTextMessage(userActivity.setStep(4), userActivity.getLanguageCode().equals("uz") ?
+                            "Kategoriyalardan birini tanlang " : "Выберите одну из категорий");
+                    case 6 -> {
+                        String name = productDto.getBrand();
                         sendTextMessage(userActivity.setStep(5), langCode.equals("uz") ? (name.equals("Air pods") ? "Air pods" : "Telefon") + " modelini tanlang" :
                                 "Введите модель " + ((name.equals("Air pods")) ? "аирподс" : "телефон"));
                     }
-                    break;
-                case 5:
-                    Product product = productRepo.findByName(text);
-                    if (product != null) {
-                        productDto.setModel(text);
-                        productDto.setPrice(product.getPrice());
-                        productDto.setDamage1(product.getDamage1());
-                        productDto.setDamage2(product.getDamage2());
-                        productDto.setId(product.getId());
-                        productDtoMap.put(userId, productDto);
+                    case 7 -> {
                         String name = productDto.getBrand();
                         if (name.equalsIgnoreCase("iphone"))
-                            sendTextMessage(userActivity.setStep(6), langCode.equals("uz") ? "Batareykangizni sig`imini kiriting!\uD83D\uDD0B" : "Введите емкость аккумулятора!\uD83D\uDD0B");
-                        else {
-                            sendTextMessage(userActivity.setStep(7), langCode.equals("uz") ? (name.equals("Air pods") ? "Air pods" : "Telefon") + "ingizni korobka dokumenti bormi?" :
+                            sendTextMessage(userActivity.setStep(6), langCode.equals("uz") ?
+                                    "Batareykangizni sig`imini kiriting!\uD83D\uDD0B" : "Введите емкость аккумулятора!\uD83D\uDD0B");
+                        else
+                            sendTextMessage(userActivity.setStep(5), langCode.equals("uz") ? (name.equals("Air pods") ? "Air pods" : "Telefon") + " modelini tanlang" :
+                                    "Введите модель " + ((name.equals("Air pods")) ? "аирподс" : "телефон"));
+                    }
+                    case 8 -> {
+                        String name = productDto.getBrand();
+                        sendTextMessage(userActivity.setStep(7), langCode.equals("uz") ? (name.equals("Air pods") ? "Air pods"
+                                : "Telefon") + "ingizni korobka dokumenti bormi?" :
+                                "У вас есть коробка и документы на ваш " + (name.equals("Air pods") ? "аирподс" : "телефон") + "?");
+                    }
+                    case 9 -> sendTextMessage(userActivity.setStep(8), langCode.equals("uz") ?
+                            "Telefoningiz rangini belgilang!" : "Выберите цвет вашего телефона!");
+                    case 10 ->
+                            sendTextMessage(userActivity.setStep(9), langCode.equals("uz") ? "Telefoningiz xotirasini belgilang!" :
+                                    "Укажите память вашего телефона!");
+                    case 11 -> {
+                        String name = productDto.getBrand();
+                        if (productDto.getBrand().equals("Air pods"))
+                            sendTextMessage(userActivity.setStep(7), langCode.equals("uz") ?
+                                    (name.equals("Air pods") ? "Air pods" : "Telefon") + "ingizni korobka dokumenti bormi?" :
                                     "У вас есть коробка и документы на ваш " + (name.equals("Air pods") ? "аирподс" : "телефон") + "?");
+                        else
+                            sendTextMessage(userActivity.setStep(10), langCode.equals("uz") ? "Telefoningiz ishlab chiqarilgan joyni kiriting!" :
+                                    "Введите место, где был изготовлен ваш телефон!");
+                    }
+                    case 12 -> {
+                        if (productDto.getBrand().equals("Air pods"))
+                            sendTextMessage(userActivity.setStep(11), langCode.equals("uz") ? "Air podsingizga shikast yetganmi?" :
+                                    "Ваш аирподс поврежден?");
+                        else
+                            sendTextMessage(userActivity.setStep(11), langCode.equals("uz") ?
+                                    "Telefoningizga shikast yetganmi?" : "Ваш телефон поврежден?");
+                    }
+                    case 15 -> redirectStep14(userActivity, productDto);
+                    case 16 -> sendTextMessage(userActivity.setStep(15), langCode.
+                            equals("uz") ? "Telefon holatini kiriting" : "Введите состояния телефона");
+                    case 17 ->
+                            sendTextMessage(userActivity.setStep(16), langCode.equals("uz") ? "Telefon raqamingizni +998********* " +
+                                    "formatda yuboring yoki \"Share contact\" tugmasini bosing" : "Отправьте свой номер телефона в" +
+                                    " формате +998************ или нажмите кнопку \"Поделиться контактом\"");
+                    case 18 -> sendTextMessage(userActivity.setStep(17), langCode.equals("uz") ? "Almashtiriladigan telfonni kiriting" +
+                            " yoki Yo'q ni bosing" : "Введите телефон для обмен или нажмите Нет");
+
+                }
+            } else
+                switch (step) {
+                    case 1 -> {
+                        Brand byName = brandRepo.findByName(text);
+                        if (byName != null) {
+                            sendTextMessage(userActivity.setStep(0), byName.getMessage());
+                        } else getNewPrices(userActivity);
+                    }
+                    case 2 -> {
+                        if (text.equals("Сменить язык \uD83C\uDF0E") || text.equals("Tilni o`zgartirish \uD83C\uDF0E"))
+                            changeLanguage(userActivity);
+                    }
+                    case 3 -> {
+                        if (text.equals("O'zbek \uD83C\uDDFA\uD83C\uDDFF"))
+                            userActivity.setLanguageCode("uz");
+                        else if (text.equals("Русский \uD83C\uDDF7\uD83C\uDDFA")) userActivity.setLanguageCode("ru");
+                        sendTextMessage(userActivity.setStep(0), userActivity.getLanguageCode().equals("uz") ? "Til o'rnatildi" : "Язык установлен");
+                    }
+                    case 4 -> {
+                        Brand brand = brandRepo.findByName(text);
+                        if (brand != null) {
+                            String name = brand.getName();
+                            productDto.setBrand(name);
+                            productDtoMap.put(userId, productDto);
+                            sendTextMessage(userActivity.setStep(5), langCode.equals("uz") ? (name.equals("Air pods") ? "Air pods" : "Telefon") + " modelini tanlang" :
+                                    "Введите модель " + ((name.equals("Air pods")) ? "аирподс" : "телефон"));
                         }
                     }
-                    break;
-                case 6:
-                    Battery battery = batteryRepo.findByName(text);
-                    if (battery != null) {
-                        Penalty penalty = penaltyRepo.findByBatteryIdAndProductId(battery.getId(), productDto.getId());
-                        productDto.setBatteryCapacity(battery.getName());
-                        productDto.setPrice(productDto.getPrice() - penalty.getAmount());
-                        productDtoMap.put(userId, productDto);
-                        sendTextMessage(userActivity.setStep(7), langCode.equals("uz") ? "Telefoningizni korobka dokumenti bormi?" :
-                                "У вас есть коробка и документы на ваш телефон?");
+                    case 5 -> {
+                        Product product = productRepo.findByName(text);
+                        if (product != null) {
+                            productDto.setModel(text);
+                            productDto.setPrice(product.getPrice());
+                            productDto.setDamage1(product.getDamage1());
+                            productDto.setDamage2(product.getDamage2());
+                            productDto.setId(product.getId());
+                            productDtoMap.put(userId, productDto);
+                            String name = productDto.getBrand();
+                            if (name.equalsIgnoreCase("iphone"))
+                                sendTextMessage(userActivity.setStep(6), langCode.equals("uz") ? "Batareykangizni sig`imini kiriting!\uD83D\uDD0B" : "Введите емкость аккумулятора!\uD83D\uDD0B");
+                            else {
+                                sendTextMessage(userActivity.setStep(7), langCode.equals("uz") ? (name.equals("Air pods") ? "Air pods" : "Telefon") + "ingizni korobka dokumenti bormi?" :
+                                        "У вас есть коробка и документы на ваш " + (name.equals("Air pods") ? "аирподс" : "телефон") + "?");
+                            }
+                        }
                     }
-                    break;
-                case 7:
-                    if (text.equals("Ha ✅") || text.equals("Да ✅")) {
-                        productDto.setDocuments(true);
-                    } else if (text.equals("Yo'q 🚫") || text.equals("Нет 🚫")) {
-                        productDto.setDocuments(false);
-                        productDto.setPrice(productDto.getPrice() - productDto.getDocumentPenalty());
-                    } else break;
-                    productDtoMap.put(userId, productDto);
-                    if (productDto.getBrand().equals("Air pods")) {
-                        sendTextMessage(userActivity.setStep(11), langCode.equals("uz") ? "Air podsingizga shikast yetganmi?" : "Ваш аирподс поврежден?");
-                    } else
-                        sendTextMessage(userActivity.setStep(8), langCode.equals("uz") ? "Telefoningiz rangini belgilang!" : "Выберите цвет вашего телефона!");
-                    break;
-                case 8:
-                    Color color = colorRepo.findByName(text);
-                    if (color != null) {
-                        productDto.setColor(text);
-                        productDtoMap.put(userId, productDto);
-                        sendTextMessage(userActivity.setStep(9), langCode.equals("uz") ? "Telefoningiz xotirasini belgilang!" :
-                                "Укажите память вашего телефона!");
+                    case 6 -> {
+                        Battery battery = batteryRepo.findByName(text);
+                        if (battery != null) {
+                            Penalty penalty = penaltyRepo.findByBatteryIdAndProductId(battery.getId(), productDto.getId());
+                            productDto.setBatteryCapacity(battery.getName());
+                            productDto.setPrice(productDto.getPrice() - penalty.getAmount());
+                            productDtoMap.put(userId, productDto);
+                            sendTextMessage(userActivity.setStep(7), langCode.equals("uz") ? "Telefoningizni korobka dokumenti bormi?" :
+                                    "У вас есть коробка и документы на ваш телефон?");
+                        }
                     }
-                    break;
-                case 9:
-                    Storage storage = storageRepo.findByName(text);
-                    if (storage != null) {
-                        Penalty penalty = penaltyRepo.findByStorageIdAndProductId(storage.getId(), productDto.getId());
-                        productDto.setStorage(text);
-                        productDto.setPrice(productDto.getPrice() - penalty.getAmount());
+                    case 7 -> {
+                        if (text.equals("Ha ✅") || text.equals("Да ✅")) {
+                            productDto.setDocuments(true);
+                        } else if (text.equals("Yo'q 🚫") || text.equals("Нет 🚫")) {
+                            productDto.setDocuments(false);
+                            productDto.setPrice(productDto.getPrice() - productDto.getDocumentPenalty());
+                        } else break;
                         productDtoMap.put(userId, productDto);
-                        sendTextMessage(userActivity.setStep(10), langCode.equals("uz") ? "Telefoningiz ishlab chiqarilgan joyni kiriting!" :
-                                "Введите место, где был изготовлен ваш телефон!");
-                    }
-                    break;
-
-                case 10:
-                    Country country = countryRepo.findByName(text);
-                    if (country != null) {
-                        Penalty penalty = penaltyRepo.findByCountryIdAndProductId(country.getId(), productDto.getId());
-                        productDto.setPrice(productDto.getPrice() - penalty.getAmount());
-                        productDto.setCountry(text);
-                        productDtoMap.put(userId, productDto);
-                        sendTextMessage(userActivity.setStep(11), langCode.equals("uz") ? "Telefoningizga shikast yetganmi?" : "Ваш телефон поврежден?");
-                    }
-                    break;
-                case 11:
-                    if (text.equals("Ha, shikast yetgan \uD83D\uDCA5") || text.equals("Да, поврежден \uD83D\uDCA5")) {
                         if (productDto.getBrand().equals("Air pods")) {
-                            sendTextMessage(userActivity.setStep(12), langCode.equals("uz") ?
-                                    """
-                                            Airpodsingizning necha foizi shikastlangan?
-
-                                            0~10% Airpods qirilgan (Chaqasi bor)""" :
-                                    """
-                                            Какой процент вашего аирподса поврежден?
-
-                                            0 ~ 10% Аирподс сломан""");
+                            sendTextMessage(userActivity.setStep(11), langCode.equals("uz") ? "Air podsingizga shikast yetganmi?" : "Ваш аирподс поврежден?");
                         } else
-                            sendTextMessage(userActivity.setStep(12), langCode.equals("uz") ? """
-                                    Telefoningizni necha foizi shikastlangan?
-
-                                    0-10% - telefon qirilgan, chaqasi bor, batareyka almashgan.
-                                    
-                                    30-50% - ekran almashgan, barmoq skanneri ishlamaydi, Face ID ishlamaydi, juda katta miqdorda zarar yetgan, dog`i bor.""" :
-                                    """
-                                            На сколько процентов поврежден ваш телефон?
-
-                                            0-10% - телефон сломан, есть бут, батарея заменена.
-                                            30-50% - заменен экран, не работает Touch ID пальцев, не работает Face ID, большое количество повреждений, есть пятна.""");
-                    } else if (text.equals("Yo'q, yetmagan! ✅") || text.equals("Нет, не поврежден! ✅")) {
-                        finallyMessage(userActivity);
-                        sendTextMessage(userActivity.setStep(14), langCode.equals("uz") ? (productDto.getBrand().equals("Air pods") ? "Air pods" : "Telefon") + "ingizni sotasizmi?\n" +
-                                "Bozor narxidan qimmatroq sotishni istasangiz, rasmiy kanalimiz sizga yordam beradi:" :
-                                "Продаётся ли ваш " + (productDto.getBrand().equals("Air pods") ? "аирподс" : "телефон") + "?\n" + "Если вы хотите продать дороже по рыночной цене," +
-                                        " наш официальный канал поможет вам в этом:");
+                            sendTextMessage(userActivity.setStep(8), langCode.equals("uz") ? "Telefoningiz rangini belgilang!" : "Выберите цвет вашего телефона!");
                     }
-                    break;
-                case 12:
-                    if (text.equals("0~10%")) productDto.setPrice(productDto.getPrice() - productDto.getDamage1());
-                    else if (text.equals("30~50%"))
-                        productDto.setPrice(productDto.getPrice() - productDto.getDamage2());
-                    else break;
-                    productDto.setDamage(text);
-                    productDtoMap.put(userId, productDto);
-                    finallyMessage(userActivity);
-                    sendTextMessage(userActivity.setStep(14), langCode.equals("uz") ? (productDto.getBrand().equals("Air pods") ? "Air pods" : "Telefon") + "ingizni sotasizmi?\n" +
-                            "Bozor narxidan qimmatroq sotishni istasangiz, rasmiy kanalimiz sizga yordam beradi:" :
-                            "Продаётся ли ваш " + (productDto.getBrand().equals("Air pods") ? "аирподс" : "телефон") + "?\n" + "Если вы хотите продать дороже по рыночной цене," +
-                                    " наш официальный канал поможет вам в этом:");
-                    break;
-                case 14:
-                    if (text.equals("Ha ✅") || text.equals("Да ✅"))
-                        sendTextMessage(userActivity.setStep(15), langCode.
-                                equals("uz") ? "Telefon holatini kiriting" : "Введите состояния телефона");
-                    else startMessage(userActivity);
-                    break;
-                case 15:
-                    productDto.setCondition(text);
-                    productDtoMap.put(userId, productDto);
-                    sendTextMessage(userActivity.setStep(16), langCode.equals("uz") ? "Telefon raqamingizni +998********* formatda yuboring yoki \"Share contact\" tugmasini bosing" : "Отправьте свой номер телефона в формате +998************ или нажмите кнопку \"Поделиться контактом\"");
-                    break;
-                case 16:
-                    if (text.startsWith("+998")) {
-                        productDto.setPhoneNumber(text);
+                    case 8 -> {
+                        Color color = colorRepo.findByName(text);
+                        if (color != null) {
+                            productDto.setColor(text);
+                            productDtoMap.put(userId, productDto);
+                            sendTextMessage(userActivity.setStep(9), langCode.equals("uz") ? "Telefoningiz xotirasini belgilang!" :
+                                    "Укажите память вашего телефона!");
+                        }
+                    }
+                    case 9 -> {
+                        Storage storage = storageRepo.findByName(text);
+                        if (storage != null) {
+                            Penalty penalty = penaltyRepo.findByStorageIdAndProductId(storage.getId(), productDto.getId());
+                            productDto.setStorage(text);
+                            productDto.setPrice(productDto.getPrice() - penalty.getAmount());
+                            productDtoMap.put(userId, productDto);
+                            sendTextMessage(userActivity.setStep(10), langCode.equals("uz") ? "Telefoningiz ishlab chiqarilgan joyni kiriting!" :
+                                    "Введите место, где был изготовлен ваш телефон!");
+                        }
+                    }
+                    case 10 -> {
+                        Country country = countryRepo.findByName(text);
+                        if (country != null) {
+                            Penalty penalty = penaltyRepo.findByCountryIdAndProductId(country.getId(), productDto.getId());
+                            productDto.setPrice(productDto.getPrice() - penalty.getAmount());
+                            productDto.setCountry(text);
+                            productDtoMap.put(userId, productDto);
+                            sendTextMessage(userActivity.setStep(11), langCode.equals("uz") ? "Telefoningizga shikast yetganmi?" : "Ваш телефон поврежден?");
+                        }
+                    }
+                    case 11 -> {
+                        if (text.equals("Ha, shikast yetgan \uD83D\uDCA5") || text.equals("Да, поврежден \uD83D\uDCA5")) {
+                            if (productDto.getBrand().equals("Air pods")) {
+                                sendTextMessage(userActivity.setStep(12), langCode.equals("uz") ?
+                                        """
+                                                Airpodsingizning necha foizi shikastlangan?
+
+                                                0~10% Airpods qirilgan (Chaqasi bor)""" :
+                                        """
+                                                Какой процент вашего аирподса поврежден?
+
+                                                0 ~ 10% Аирподс сломан""");
+                            } else
+                                sendTextMessage(userActivity.setStep(12), langCode.equals("uz") ? """
+                                        Telefoningizni necha foizi shikastlangan?
+
+                                        0-10% - telefon qirilgan, chaqasi bor, batareyka almashgan.
+                                                                            
+                                        30-50% - ekran almashgan, barmoq skanneri ishlamaydi, Face ID ishlamaydi, juda katta miqdorda zarar yetgan, dog`i bor.""" :
+                                        """
+                                                На сколько процентов поврежден ваш телефон?
+
+                                                0-10% - телефон сломан, есть бут, батарея заменена.
+                                                30-50% - заменен экран, не работает Touch ID пальцев, не работает Face ID, большое количество повреждений, есть пятна.""");
+                        } else if (text.equals("Yo'q, yetmagan! ✅") || text.equals("Нет, не поврежден! ✅")) {
+                            finallyMessage(userActivity);
+                            redirectStep14(userActivity, productDto);
+                        }
+                    }
+                    case 12 -> {
+                        if (text.equals("0~10%")) productDto.setPrice(productDto.getPrice() - productDto.getDamage1());
+                        else if (text.equals("30~50%"))
+                            productDto.setPrice(productDto.getPrice() - productDto.getDamage2());
+                        else break;
+                        productDto.setDamage(text);
                         productDtoMap.put(userId, productDto);
-                        sendTextMessage(userActivity.setStep(17), langCode.equals("uz") ? "Almashtiriladigan telfonni kiriting yoki Yo'q ni bosing" : "Введите телефон для обмен или нажмите Нет");
-                    } else
-                        sendTextMessage(userActivity, langCode.equals("uz") ? "Telefon raqamingizni +998********* formatda yuboring yoki \"Share contact\" tugmasini bosing" : "Отправьте свой номер телефона в формате +998************ или нажмите кнопку \"Поделиться контактом\"");
-                    break;
-                case 17:
-                    productDto.setSwap(text);
-                    productDtoMap.put(userId, productDto);
-                    sendTextMessage(userActivity.setStep(18), langCode.equals("uz") ? "Shaxar yoki viloyatingizni kiriting" : "Введите свой регион");
-                    break;
-                case 18:
-                    productDto.setPlace(text);
-                    productDtoMap.put(userId, productDto);
-
-                    finallyMessage(userActivity);
-
-                    sendTextMessage(userActivity.setStep(0), langCode.
-
-                            equals("uz") ? "Agar qurilmangizni sotmoqchi bo`lsangiz @" + adminUsername + " ga murojaat qiling." : "Если вы хотите продать свой девайс, свяжитесь с @" + adminUsername);
-                    break;
-            }
-        } else if (userActivity.getRole().
-
-                equals("admin")) {
+                        finallyMessage(userActivity);
+                        redirectStep14(userActivity, productDto);
+                    }
+                    case 14 -> {
+                        if (text.equals("Ha ✅") || text.equals("Да ✅")) {
+                            if (productDto.getBrand().equalsIgnoreCase("air pods"))
+                                sendTextMessage(userActivity.setStep(0), "Air podsingizni sotmoqchi bo'lsangiz @" + adminUsername + " ga murojaat qiling");
+                            else
+                                sendTextMessage(userActivity.setStep(15), langCode.
+                                        equals("uz") ? "Telefon holatini kiriting" : "Введите состояния телефона");
+                        } else startMessage(userActivity);
+                    }
+                    case 15 -> {
+                        productDto.setCondition(text);
+                        productDtoMap.put(userId, productDto);
+                        sendTextMessage(userActivity.setStep(16), langCode.equals("uz") ? "Telefon raqamingizni +998********* formatda yuboring yoki \"Share contact\" tugmasini bosing" : "Отправьте свой номер телефона в формате +998************ или нажмите кнопку \"Поделиться контактом\"");
+                    }
+                    case 16 -> {
+                        if (text.startsWith("+998")) {
+                            productDto.setPhoneNumber(text);
+                            productDtoMap.put(userId, productDto);
+                            sendTextMessage(userActivity.setStep(17), langCode.equals("uz") ? "Almashtiriladigan telfonni kiriting yoki Yo'q ni bosing" : "Введите телефон для обмен или нажмите Нет");
+                        } else
+                            sendTextMessage(userActivity, langCode.equals("uz") ? "Telefon raqamingizni +998********* formatda yuboring yoki \"Share contact\" tugmasini bosing" : "Отправьте свой номер телефона в формате +998************ или нажмите кнопку \"Поделиться контактом\"");
+                    }
+                    case 17 -> {
+                        productDto.setSwap(text);
+                        productDtoMap.put(userId, productDto);
+                        sendTextMessage(userActivity.setStep(18), langCode.equals("uz") ? "Shaxar yoki viloyatingizni kiriting" : "Введите свой регион");
+                    }
+                    case 18 -> {
+                        productDto.setPlace(text);
+                        productDtoMap.put(userId, productDto);
+                        finallyMessage(userActivity);
+                        sendTextMessage(userActivity.setStep(0), langCode.
+                                equals("uz") ? "Agar qurilmangizni sotmoqchi bo`lsangiz @" + adminUsername + " ga murojaat qiling." : "Если вы хотите продать свой девайс, свяжитесь с @" + adminUsername);
+                    }
+                }
+        } else if (userActivity.getRole().equals("admin")) {
             final String msg = "Bajariladigan amalni tanlang";
             Product product = productMap.get(userId);
             if (product == null)
@@ -349,45 +386,44 @@ public class Bot extends TelegramLongPollingBot {
                 case "Olish uchun" -> sendTextMessage(userActivity.setStep(5), msg);
             }
             switch (step) {
-                case 2:
+                case 2 -> {
                     if (text.equals("Qo'shish"))
                         sendTextMessage(userActivity.setStep(3), "Kanal usernameni kiriting");
                     else if (text.equals("O'chirish"))
                         sendTextMessage(userActivity.setStep(4), "Kanal usernameni tanlang");
-                    break;
-                case 3:
+                }
+                case 3 -> {
                     channelRepo.save(new Channel(text));
                     sendTextMessage(userActivity.setStep(1), "Kanal qo'shildi");
-                    break;
-                case 4:
+                }
+                case 4 -> {
                     Channel channel = channelRepo.findByChannelId(text);
                     if (channel != null) {
                         channelRepo.delete(channel);
                         sendTextMessage(userActivity.setStep(1), "o'chirildi");
                     }
-                    break;
-                case 5:
+                }
+                case 5 -> {
                     switch (text) {
                         case "Qo'shish" -> sendTextMessage(userActivity.setStep(step + 1), "Brandni tanlang");
                         case "O'chirish" -> sendTextMessage(userActivity.setStep(21), "Brandni tanlang");
                         case "Narxini o'zgartirish" -> sendTextMessage(userActivity.setStep(23), "Brandni tanlang");
                     }
-                    break;
-                case 6:
-                case 19:
+                }
+                case 6, 19 -> {
                     Brand byName = brandRepo.findByName(text);
                     if (byName == null) byName = brandRepo.save(new Brand(text));
                     product.setBrand(byName);
                     productMap.put(userId, product);
                     if (step == 6) sendTextMessage(userActivity.setStep(7), "Modelni kiriting");
                     else sendTextMessage(userActivity.setStep(20), "Xabarni kiriting");
-                    break;
-                case 7:
+                }
+                case 7 -> {
                     product.setName(text);
                     productMap.put(userId, product);
                     sendTextMessage(userActivity.setStep(8), "Ranglarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
-                    break;
-                case 8:
+                }
+                case 8 -> {
                     if (text.equals("Keyingi ➡️") && product.getColors() != null) {
                         sendTextMessage(userActivity.setStep(9), "Xotira sig'imlarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
                         break;
@@ -401,8 +437,8 @@ public class Bot extends TelegramLongPollingBot {
                         product.setColors(colors);
                         productMap.put(userId, product);
                     }
-                    break;
-                case 9:
+                }
+                case 9 -> {
                     if (text.equals("Keyingi ➡️") && product.getStorages() != null) {
                         sendTextMessage(userActivity.setStep(11), "Narxini kiriting");
                         return;
@@ -416,8 +452,8 @@ public class Bot extends TelegramLongPollingBot {
                         productDtoMap.put(userId, productDto);
                         sendTextMessage(userActivity.setStep(10), "Ayiriladigan miqdorni kiriting");
                     }
-                    break;
-                case 10:
+                }
+                case 10 -> {
                     double amount = Double.parseDouble(text);
                     Map<Storage, Penalty> map = product.getStorages();
                     if (map == null) map = new HashMap<>();
@@ -428,14 +464,14 @@ public class Bot extends TelegramLongPollingBot {
                     product.setStorages(map);
                     productMap.put(userId, product);
                     sendTextMessage(userActivity.setStep(9), "Xotira sig'imlarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
-                    break;
-                case 11:
+                }
+                case 11 -> {
                     double price = Double.parseDouble(text);
                     product.setPrice(price);
                     productMap.put(userId, product);
                     sendTextMessage(userActivity.setStep(12), "Ishlab chiqariladigan joylarni kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
-                    break;
-                case 12:
+                }
+                case 12 -> {
                     if (text.equals("Keyingi ➡️") && product.getCountries() != null) {
                         sendTextMessage(userActivity.setStep(14), "Karobka & dokument Yo'q 🚫 bo'lganda olinadigan miqdorni kiriting");
                         return;
@@ -447,8 +483,8 @@ public class Bot extends TelegramLongPollingBot {
                         productDtoMap.put(userId, productDto);
                         sendTextMessage(userActivity.setStep(13), "Ayiriladigan miqdorni kiriting");
                     }
-                    break;
-                case 13:
+                }
+                case 13 -> {
                     double amount1 = Double.parseDouble(text);
                     Map<Country, Penalty> countries = product.getCountries();
                     if (countries == null) countries = new HashMap<>();
@@ -459,8 +495,8 @@ public class Bot extends TelegramLongPollingBot {
                     product.setCountries(countries);
                     productMap.put(userId, product);
                     sendTextMessage(userActivity.setStep(12), "Ishlab chiqariladigan joylarni kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
-                    break;
-                case 14:
+                }
+                case 14 -> {
                     double documentPenalty = Double.parseDouble(text);
                     product.setDocumentPenalty(documentPenalty);
                     productMap.put(userId, product);
@@ -468,8 +504,8 @@ public class Bot extends TelegramLongPollingBot {
                         sendTextMessage(userActivity.setStep(15), "Batareyka sig'imlarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
                     else
                         sendTextMessage(userActivity.setStep(17), "0-10% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
-                    break;
-                case 15:
+                }
+                case 15 -> {
                     if (text.equals("Keyingi ➡️") && product.getBattery() != null) {
                         sendTextMessage(userActivity.setStep(17), "0-10% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
                         return;
@@ -481,8 +517,8 @@ public class Bot extends TelegramLongPollingBot {
                         productDtoMap.put(userId, productDto);
                         sendTextMessage(userActivity.setStep(16), "Ayiriladigan miqdorni kiriting");
                     }
-                    break;
-                case 16:
+                }
+                case 16 -> {
                     double amount2 = Double.parseDouble(text);
                     Map<Battery, Penalty> map1 = product.getBattery();
                     if (map1 == null) map1 = new HashMap<>();
@@ -493,27 +529,27 @@ public class Bot extends TelegramLongPollingBot {
                     product.setBattery(map1);
 
                     sendTextMessage(userActivity.setStep(15), "Batareyka sig'imlarini kiriting. Kiritib bo'lgandan so'ng \"Keyingi ➡️\" tugmasini bosing");
-                    break;
-                case 17:
+                }
+                case 17 -> {
                     int damage1 = Integer.parseInt(text);
                     product.setDamage1(damage1);
                     productMap.put(userId, product);
                     sendTextMessage(userActivity.setStep(18), "30-50% orasidagi shikastlanganlik uchun olinadigan miqdorni kiriting");
-                    break;
-                case 18:
+                }
+                case 18 -> {
                     int damage2 = Integer.parseInt(text);
                     product.setDamage2(damage2);
                     productRepo.save(product);
                     productMap.put(userActivity.getUser().getId(), new Product());
                     sendTextMessage(userActivity.setStep(29), "Qo'shildi");
-                    break;
-                case 20:
+                }
+                case 20 -> {
                     Brand brand = product.getBrand();
                     brand.setMessage(text);
                     brandRepo.save(brand);
                     startMessage(userActivity);
-                    break;
-                case 21:
+                }
+                case 21 -> {
                     Brand brand1 = brandRepo.findByName(text);
                     if (brand1 != null) {
                         product.setBrand(brand1);
@@ -521,8 +557,8 @@ public class Bot extends TelegramLongPollingBot {
                         StringBuilder productList = getProductList(brand1);
                         sendTextMessage(userActivity.setStep(22), productList.toString());
                     }
-                    break;
-                case 22:
+                }
+                case 22 -> {
                     boolean flag = false;
                     try {
                         Product product1 = productRepo.findByIdAndBrandIdOrderById(Integer.parseInt(text), product.getBrand().getId());
@@ -534,40 +570,37 @@ public class Bot extends TelegramLongPollingBot {
                         sendTextMessage(userActivity, "O'chmadi");
                         flag = true;
                     }
-                    if (!flag)
-                        sendTextMessage(userActivity.setStep(0), "O'chirildi");
-                    break;
-                case 23:
+                    if (!flag) sendTextMessage(userActivity.setStep(0), "O'chirildi");
+                }
+                case 23 -> {
                     Brand brand2 = brandRepo.findByName(text);
                     if (brand2 != null) {
                         product.setBrand(brand2);
                         productMap.put(userId, product);
                         sendTextMessage(userActivity.setStep(24), getProductList(brand2).toString());
                     }
-                    break;
-                case 24:
+                }
+                case 24 -> {
                     Product product1 = productRepo.findByIdAndBrandIdOrderById(Integer.parseInt(text), product.getBrand().getId());
                     if (product1 != null) {
                         product.setId(product1.getId());
                         sendTextMessage(userActivity.setStep(25), "Yangi narxni kiriting");
                     }
-                    break;
-                case 25:
+                }
+                case 25 -> {
                     double newPrice = Double.parseDouble(text);
                     Product product2 = productRepo.findById(product.getId()).get();
                     product2.setPrice(newPrice);
                     productRepo.save(product2);
                     sendTextMessage(userActivity.setStep(0), "O'zgartirildi");
-                    break;
-                case 26:
+                }
+                case 26 -> {
                     if (text.equals("Qo'shish"))
                         sendTextMessage(userActivity.setStep(27), "Foydalanuvchi IDsini kiriting");
                     else if (text.equals("O'chirish"))
                         sendTextMessage(userActivity.setStep(28), "Foydalanuvchi IDsini kiriting");
-
-                    break;
-                case 27:
-                case 28:
+                }
+                case 28, 27 -> {
                     Long id = Long.parseLong(text);
                     if (!id.equals(userId)) {
                         UserActivity userActivity1 = userActivityService.findByUserId(id);
@@ -577,10 +610,9 @@ public class Bot extends TelegramLongPollingBot {
                             userActivity1.setRole("user");
                         userActivityService.save(userActivity1);
                     }
-
                     startMessage(userActivity);
-                    break;
-                case 31:
+                }
+                case 31 -> {
                     switch (text) {
                         case "Telegram":
                             sendTextMessage(userActivity.setStep(32), "Linkni kiriting. Masalan: https://telegram.org");
@@ -589,18 +621,24 @@ public class Bot extends TelegramLongPollingBot {
                         case "Admin username":
                             sendTextMessage(userActivity.setStep(34), "Username ni @ belgisisiz kiriting");
                     }
-                    break;
-                case 32:
-                case 33:
-                case 34:
+                }
+                case 34, 33, 32 -> {
                     if (step == 32)
                         telegramUrl = text;
                     else if (step == 33) instagramUrl = text;
                     else adminUsername = text;
                     startMessage(userActivity);
-                    break;
+                }
             }
         }
+    }
+
+    private void redirectStep14(UserActivity userActivity, ProductDto productDto) {
+        String langCode = userActivity.getLanguageCode();
+        sendTextMessage(userActivity.setStep(14), langCode.equals("uz") ? (productDto.getBrand().equals("Air pods") ? "Air pods" : "Telefon") + "ingizni sotasizmi?\n" +
+                "Bozor narxidan qimmatroq sotishni istasangiz, rasmiy kanalimiz sizga yordam beradi:" :
+                "Продаётся ли ваш " + (productDto.getBrand().equals("Air pods") ? "аирподс" : "телефон") + "?\n" + "Если вы хотите продать дороже по рыночной цене," +
+                        " наш официальный канал поможет вам в этом:");
     }
 
     private ReplyKeyboard getReplyKeyboard(UserActivity userActivity, boolean isChannelMember) {
@@ -616,14 +654,24 @@ public class Bot extends TelegramLongPollingBot {
             ProductDto productDto = productDtoMap.get(userId);
             int step = userActivity.getStep();
             if (userActivity.getRole().equals("user")) {
+                replyKeyboardMarkup.setOneTimeKeyboard(true);
                 switch (step) {
                     case 0 -> getStep0Keyboard(langCode, rows);
                     case 1 -> {
                         List<Brand> brands = brandRepo.findByMessageNotNull();
                         getObjectsKeyboard(brands, rows);
                     }
-                    case 2 -> getChangeLangKeyboard(langCode, rows);
-                    case 3 -> getLangKeyboard(rows);
+                    case 2 -> {
+                        KeyboardRow row = new KeyboardRow();
+                        row.add(langCode.equals("uz") ? "Tilni o`zgartirish \uD83C\uDF0E" : "Сменить язык \uD83C\uDF0E");
+                        rows.add(row);
+                    }
+                    case 3 -> {
+                        KeyboardRow row = new KeyboardRow();
+                        row.add("O'zbek \uD83C\uDDFA\uD83C\uDDFF");
+                        row.add("Русский \uD83C\uDDF7\uD83C\uDDFA");
+                        rows.add(row);
+                    }
                     case 4 -> {
                         List<Brand> brands1 = brandRepo.findByExistsProducts();
                         getObjectsKeyboard(brands1, rows);
@@ -687,14 +735,14 @@ public class Bot extends TelegramLongPollingBot {
                         rows.add(row3);
                     }
                     case 17 -> {
-                        KeyboardRow row4 = new KeyboardRow();
-                        row4.add(langCode.equals("uz") ? "Yo'q" : "Нет");
-                        rows.add(row4);
+                        KeyboardRow row = new KeyboardRow();
+                        row.add(langCode.equals("uz") ? "Yo'q" : "Нет");
+                        rows.add(row);
                     }
                 }
             } else if (userActivity.getRole().equals("admin")) {
                 switch (step) {
-                    case 0:
+                    case 0 -> {
                         KeyboardRow row = new KeyboardRow();
                         row.add("CRUD");
                         rows.add(row);
@@ -707,60 +755,54 @@ public class Bot extends TelegramLongPollingBot {
                         row = new KeyboardRow();
                         row.add("Ijtimoiy tarmoqlar");
                         rows.add(row);
-                        break;
-                    case 1:
-                        KeyboardRow row1 = new KeyboardRow();
-                        row1.add("Kanal CRUD");
-                        row1.add("Mahsulot CRUD");
-                        rows.add(row1);
-                        break;
-                    case 2:
-                    case 26:
-                        getCrudKeyboard(rows);
-                        break;
-                    case 6:
-                    case 19:
-                    case 21:
-                    case 23:
+                    }
+                    case 1 -> {
+                        KeyboardRow row = new KeyboardRow();
+                        row.add("Kanal CRUD");
+                        row.add("Mahsulot CRUD");
+                        rows.add(row);
+                    }
+                    case 2, 26 -> getCrudKeyboard(rows);
+                    case 6, 19, 21, 23 -> {
                         List<Brand> all = brandRepo.findAll();
                         getObjectsKeyboard(all, rows);
-                        break;
-                    case 29:
-                        KeyboardRow row2 = new KeyboardRow();
-                        row2.add("Sotish uchun");
-                        row2.add("Olish uchun");
-                        rows.add(row2);
-                        break;
-                    case 4:
+                    }
+                    case 29 -> {
+                        KeyboardRow row = new KeyboardRow();
+                        row.add("Sotish uchun");
+                        row.add("Olish uchun");
+                        rows.add(row);
+                    }
+                    case 4 -> {
                         for (Channel channel : channelRepo.findAll()) {
-                            KeyboardRow row3 = new KeyboardRow();
-                            row3.add(channel.getChannelId());
-                            rows.add(row3);
+                            KeyboardRow row = new KeyboardRow();
+                            row.add(channel.getChannelId());
+                            rows.add(row);
                         }
-                        break;
-                    case 5:
+                    }
+                    case 5 -> {
                         getCrudKeyboard(rows);
-                        KeyboardRow row4 = new KeyboardRow();
-                        row4.add("Narxini o'zgartirish");
-                        rows.add(row4);
-                        break;
-                    case 8:
+                        KeyboardRow row = new KeyboardRow();
+                        row.add("Narxini o'zgartirish");
+                        rows.add(row);
+                    }
+                    case 8 -> {
                         List<Color> colors = colorRepo.findAll();
                         getObjectsKeyboard(colors, rows);
-                        break;
-                    case 9:
+                    }
+                    case 9 -> {
                         List<Storage> storages = storageRepo.findAll();
                         getObjectsKeyboard(storages, rows);
-                        break;
-                    case 12:
+                    }
+                    case 12 -> {
                         List<Country> countries = countryRepo.findAll();
                         getObjectsKeyboard(countries, rows);
-                        break;
-                    case 15:
+                    }
+                    case 15 -> {
                         List<Battery> batteries = batteryRepo.findAll();
                         getObjectsKeyboard(batteries, rows);
-                        break;
-                    case 31:
+                    }
+                    case 31 -> {
                         KeyboardRow row5 = new KeyboardRow();
                         row5.add("Telegram");
                         row5.add("Instagram");
@@ -768,7 +810,7 @@ public class Bot extends TelegramLongPollingBot {
                         row5 = new KeyboardRow();
                         row5.add("Admin username");
                         rows.add(row5);
-                        break;
+                    }
                 }
                 if (step == 8 || step == 9 || step == 12 || step == 15) {
                     KeyboardRow row = new KeyboardRow();
@@ -776,9 +818,10 @@ public class Bot extends TelegramLongPollingBot {
                     rows.add(row);
                 }
             }
-            if (step == 2 || step == 6) replyKeyboardMarkup.setOneTimeKeyboard(true);
             if (step > 0 && step != 3) {
                 KeyboardRow row = new KeyboardRow();
+                if (step != 14)
+                    row.add(langCode.equals("uz") ? "Ortga ◀️" : "Назад ◀️");
                 row.add(langCode.equals("uz") ? "\uD83D\uDD1D Asosiy Menyu" : "\uD83D\uDD1D Главное Меню");
                 rows.add(row);
             }
@@ -789,7 +832,7 @@ public class Bot extends TelegramLongPollingBot {
     private void changeLanguage(UserActivity userActivity) {
         sendTextMessage(userActivity.setStep(3), """
                 Assalomu Alaykum Telsotuz rasmiy botiga xush kelibsiz iltimos tilni tanlang!\uD83D\uDC47
-                
+                                
                 Здравствуйте, добро пожаловать в официальный бот Telsotuz!,
                 Пожалуйста, выберите язык!"""
         );
@@ -894,19 +937,6 @@ public class Bot extends TelegramLongPollingBot {
         rows.add(row);
     }
 
-    private void getLangKeyboard(List<KeyboardRow> rows) {
-        KeyboardRow row = new KeyboardRow();
-        row.add("O'zbek \uD83C\uDDFA\uD83C\uDDFF");
-        row.add("Русский \uD83C\uDDF7\uD83C\uDDFA");
-        rows.add(row);
-    }
-
-    private void getChangeLangKeyboard(String langCode, List<KeyboardRow> rows) {
-        KeyboardRow row = new KeyboardRow();
-        row.add(langCode.equals("uz") ? "Tilni o`zgartirish \uD83C\uDF0E" : "Сменить язык \uD83C\uDF0E");
-        rows.add(row);
-    }
-
     private void getStep0Keyboard(String langCode, List<KeyboardRow> rows) {
         if (langCode.equals("uz"))
             for (String s : menuButtonsUz) {
@@ -920,7 +950,6 @@ public class Bot extends TelegramLongPollingBot {
                 row.add(s);
                 rows.add(row);
             }
-
     }
 
     private InlineKeyboardMarkup getJoinChannelRequest(UserActivity userActivity) {
