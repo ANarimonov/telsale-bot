@@ -654,7 +654,6 @@ public class Bot extends TelegramLongPollingBot {
             ProductDto productDto = productDtoMap.get(userId);
             int step = userActivity.getStep();
             if (userActivity.getRole().equals("user")) {
-                replyKeyboardMarkup.setOneTimeKeyboard(true);
                 switch (step) {
                     case 0 -> getStep0Keyboard(langCode, rows);
                     case 1 -> {
