@@ -34,17 +34,5 @@ public class DataLoader implements CommandLineRunner {
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
-        while (true){
-            String forObject = restTemplate.getForObject(
-                    "https://telsale-bot.herokuapp.com/api/test/hello",
-                    String.class
-            );
-            System.out.println(forObject);
-            try {
-                Thread.sleep(50000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 }
